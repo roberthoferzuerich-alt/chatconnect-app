@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -15,13 +16,35 @@ class AuthRepository {
 
   AuthRepository({required Dio dio}) : _dio = dio;
 
+  Future<User?> updateProfile({
+    String? name,
+    String? about,
+    File? avatar,
+  }) async {
+    try {
+      final formData = FormData.fromMap({
+        if (name != null) 'name': name,
+        if (about != null) 'about': about,
+        if (avatar != null) 'avatar': await MultipartFile.fromFile(avatar.path),
+      });
+
+      final response = await _dio.post('auth/profile', data: formData);
+      return User.fromJson(response.data['user']);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<User?> login(String email, String password) async {
     try {
-      final response = await _dio.post('auth/login', data: {
-        'email': email,
-        'password': password,
-        'device_name': 'mobile_app',
-      });
+      final response = await _dio.post(
+        'auth/login',
+        data: {
+          'email': email,
+          'password': password,
+          'device_name': 'mobile_app',
+        },
+      );
 
       final token = response.data['data']['token'];
       await _storage.write(key: 'auth_token', value: token);
@@ -34,12 +57,15 @@ class AuthRepository {
 
   Future<User?> register(String name, String email, String password) async {
     try {
-      final response = await _dio.post('auth/register', data: {
-        'name': name,
-        'email': email,
-        'password': password,
-        'password_confirmation': password,
-      });
+      final response = await _dio.post(
+        'auth/register',
+        data: {
+          'name': name,
+          'email': email,
+          'password': password,
+          'password_confirmation': password,
+        },
+      );
 
       final token = response.data['data']['token'];
       await _storage.write(key: 'auth_token', value: token);

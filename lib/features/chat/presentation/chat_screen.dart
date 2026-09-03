@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../domain/message_model.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../auth/presentation/auth_provider.dart';
 import 'chat_providers.dart';
 
@@ -21,7 +24,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Future<void> _send({String? imagePath}) async {
     final text = _msgCtrl.text.trim();
     if (text.isEmpty && imagePath == null) return;
-    
+
     _msgCtrl.clear();
     setState(() => _isUploading = imagePath != null);
 
@@ -51,12 +54,78 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
-  Future<void> _pickImage() async {
+  void _showImageSourceDialog() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Kamera'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Galerie'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.gallery);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
     final picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+    final image = await picker.pickImage(source: source, imageQuality: 70);
     if (image != null) {
       await _send(imagePath: image.path);
     }
+  }
+
+  void _showMessageOptions(Message msg, bool isMe) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            if (msg.content.isNotEmpty)
+              ListTile(
+                leading: const Icon(Icons.copy),
+                title: const Text('Kopieren'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Clipboard.setData(ClipboardData(text: msg.content));
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text('Kopiert!')));
+                },
+              ),
+            if (isMe)
+              ListTile(
+                leading: const Icon(Icons.delete, color: Colors.red),
+                title: const Text(
+                  'Löschen',
+                  style: TextStyle(color: Colors.red),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  ref
+                      .read(messagesProvider(widget.conversationId).notifier)
+                      .deleteMessage(msg.id);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -80,77 +149,101 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   itemBuilder: (context, index) {
                     final msg = messages[index];
                     final isMe = msg.senderId == currentUser?.id;
-                    
+
                     return Align(
                       alignment: isMe
                           ? Alignment.centerRight
                           : Alignment.centerLeft,
-                      child: Container(
-                        constraints: BoxConstraints(
-                          maxWidth: MediaQuery.of(context).size.width * 0.75,
-                        ),
-                        margin: const EdgeInsets.symmetric(
-                          vertical: 4,
-                          horizontal: 8,
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 8,
-                          horizontal: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isMe
-                              ? Colors.teal.shade100
-                              : Colors.grey.shade200,
-                          borderRadius: BorderRadius.only(
-                            topLeft: const Radius.circular(16),
-                            topRight: const Radius.circular(16),
-                            bottomLeft: isMe ? const Radius.circular(16) : Radius.zero,
-                            bottomRight: isMe ? Radius.zero : const Radius.circular(16),
+                      child: GestureDetector(
+                        onLongPress: () => _showMessageOptions(msg, isMe),
+                        child: Container(
+                          constraints: BoxConstraints(
+                            maxWidth: MediaQuery.of(context).size.width * 0.75,
                           ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                          children: [
-                            if (msg.imageUrl != null)
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 8.0),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Image.network(
-                                    msg.imageUrl!,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
-                                  ),
-                                ),
-                              ),
-                            if (msg.content.isNotEmpty)
-                              Text(
-                                msg.content,
-                                style: const TextStyle(fontSize: 16),
-                              ),
-                            const SizedBox(height: 4),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (msg.createdAt != null)
-                                  Text(
-                                    DateFormat('HH:mm').format(msg.createdAt!.toLocal()),
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.black.withOpacity(0.5),
+                          margin: const EdgeInsets.symmetric(
+                            vertical: 4,
+                            horizontal: 8,
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 8,
+                            horizontal: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isMe
+                                ? Colors.teal.shade100
+                                : Colors.grey.shade200,
+                            borderRadius: BorderRadius.only(
+                              topLeft: const Radius.circular(16),
+                              topRight: const Radius.circular(16),
+                              bottomLeft: isMe
+                                  ? const Radius.circular(16)
+                                  : Radius.zero,
+                              bottomRight: isMe
+                                  ? Radius.zero
+                                  : const Radius.circular(16),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: isMe
+                                ? CrossAxisAlignment.end
+                                : CrossAxisAlignment.start,
+                            children: [
+                              if (msg.imageUrl != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 8.0),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: CachedNetworkImage(
+                                      imageUrl: msg.imageUrl!.startsWith('http')
+                                          ? msg.imageUrl!
+                                          : 'https://rhz.internet-box.ch:8443/storage/${msg.imageUrl}',
+                                      fit: BoxFit.cover,
+                                      errorWidget: (_, __, ___) =>
+                                          const Icon(Icons.broken_image),
+                                      placeholder: (context, url) =>
+                                          const SizedBox(
+                                            height: 150,
+                                            child: Center(
+                                              child:
+                                                  CircularProgressIndicator(),
+                                            ),
+                                          ),
                                     ),
                                   ),
-                                if (isMe) ...[
-                                  const SizedBox(width: 4),
-                                  Icon(
-                                    Icons.done_all,
-                                    size: 14,
-                                    color: msg.readAt != null ? Colors.blue : Colors.grey,
-                                  ),
+                                ),
+                              if (msg.content.isNotEmpty)
+                                Text(
+                                  msg.content,
+                                  style: const TextStyle(fontSize: 16),
+                                ),
+                              const SizedBox(height: 4),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (msg.createdAt != null)
+                                    Text(
+                                      DateFormat(
+                                        'HH:mm',
+                                      ).format(msg.createdAt!.toLocal()),
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.black.withOpacity(0.5),
+                                      ),
+                                    ),
+                                  if (isMe) ...[
+                                    const SizedBox(width: 4),
+                                    Icon(
+                                      Icons.done_all,
+                                      size: 14,
+                                      color: msg.readAt != null
+                                          ? Colors.blue
+                                          : Colors.grey,
+                                    ),
+                                  ],
                                 ],
-                              ],
-                            ),
-                          ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     );
@@ -171,7 +264,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.attach_file, color: Colors.teal),
-                    onPressed: _isUploading ? null : _pickImage,
+                    onPressed: _isUploading ? null : _showImageSourceDialog,
                   ),
                   Expanded(
                     child: TextField(

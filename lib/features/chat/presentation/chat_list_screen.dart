@@ -16,9 +16,18 @@ class ChatListScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Chats'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => ref.read(authStateProvider.notifier).logout(),
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'profile') {
+                context.push('/profile');
+              } else if (value == 'logout') {
+                ref.read(authStateProvider.notifier).logout();
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: 'profile', child: Text('Profil')),
+              const PopupMenuItem(value: 'logout', child: Text('Abmelden')),
+            ],
           ),
         ],
       ),

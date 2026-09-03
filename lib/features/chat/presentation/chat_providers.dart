@@ -111,6 +111,20 @@ class MessagesNotifier extends StateNotifier<AsyncValue<List<Message>>> {
     }
   }
 
+  Future<void> deleteMessage(int messageId) async {
+    try {
+      await _repo.deleteMessage(messageId);
+      if (state.hasValue) {
+        final currentList = state.value!;
+        state = AsyncValue.data(
+          currentList.where((m) => m.id != messageId).toList(),
+        );
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   @override
   void dispose() {
     EchoClient.disconnect();

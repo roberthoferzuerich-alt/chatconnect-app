@@ -56,4 +56,8 @@ class ChatRepository {
   Future<void> markAsRead(int conversationId) async {
     await _dio.post('conversations/$conversationId/read');
   }
+
+  Future<void> deleteMessage(int messageId) async {
+    await _dio.delete('messages/$messageId');
+  }
 }

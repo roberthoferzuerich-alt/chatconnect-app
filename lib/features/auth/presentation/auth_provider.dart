@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import '../data/auth_repository.dart';
@@ -13,6 +14,27 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
   final AuthRepository _repository;
 
   AuthNotifier(this._repository) : super(const AsyncValue.loading());
+
+  Future<void> updateProfile({
+    String? name,
+    String? about,
+    File? avatar,
+  }) async {
+    // Keep current state while updating, but maybe show a loading indicator
+    // locally in the UI. For simplicity, we just await the repo.
+    try {
+      final updatedUser = await _repository.updateProfile(
+        name: name,
+        about: about,
+        avatar: avatar,
+      );
+      if (updatedUser != null) {
+        state = AsyncValue.data(updatedUser);
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
 
   Future<void> checkAuth() async {
     state = const AsyncValue.loading();

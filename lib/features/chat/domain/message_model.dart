@@ -27,7 +27,7 @@ class Message {
       conversationId: json['conversation_id'],
       senderId: json['sender_id'],
       content: json['content'] ?? '',
-      imageUrl: json['image_url'],
+      imageUrl: json['image_path'] ?? json['image_url'],
       readAt: json['read_at'] != null ? DateTime.parse(json['read_at']) : null,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
