@@ -3,11 +3,25 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  audioplayers_windows
+  connectivity_plus
+  emoji_picker_flutter
   file_selector_windows
+  firebase_core
   flutter_secure_storage_windows
+  flutter_volume_controller
+  gal
+  permission_handler_windows
+  record_windows
+  screen_brightness_windows
+  share_plus
+  url_launcher_windows
+  zego_express_engine
+  zego_zim
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
+  flutter_local_notifications_windows
   jni
 )
 

@@ -4,19 +4,46 @@ import 'package:flutter_riverpod/legacy.dart';
 import '../data/chat_repository.dart';
 import '../domain/conversation_model.dart';
 import '../domain/message_model.dart';
+import '../domain/call_record.dart';
 import '../../../core/api/echo_client.dart';
 import '../../auth/presentation/auth_provider.dart';
+import 'package:dart_pusher_channels/dart_pusher_channels.dart';
 
-final conversationsProvider = FutureProvider<List<Conversation>>((ref) async {
-  return ref.watch(chatRepositoryProvider).getConversations();
+final conversationsProvider =
+    AsyncNotifierProvider<ConversationsNotifier, List<Conversation>>(
+      () => ConversationsNotifier(),
+    );
+
+class ConversationsNotifier extends AsyncNotifier<List<Conversation>> {
+  @override
+  Future<List<Conversation>> build() async {
+    final repo = ref.read(chatRepositoryProvider);
+    return repo.getConversations();
+  }
+
+  Future<void> deleteConversation(int id) async {
+    try {
+      final repo = ref.read(chatRepositoryProvider);
+      await repo.deleteConversation(id);
+      if (state.hasValue) {
+        state = AsyncValue.data(state.value!.where((c) => c.id != id).toList());
+      }
+    } catch (e) {}
+  }
+}
+
+final archivedChatIdsProvider = StateProvider<Set<int>>((ref) => {});
+
+final callsProvider = FutureProvider<List<CallRecord>>((ref) async {
+  final repo = ref.read(chatRepositoryProvider);
+  return repo.getCalls();
 });
 
-final messagesProvider =
-    StateNotifierProvider.family<
-      MessagesNotifier,
-      AsyncValue<List<Message>>,
-      int
-    >((ref, conversationId) {
+final messagesProvider = StateNotifierProvider.autoDispose
+    .family<MessagesNotifier, AsyncValue<List<Message>>, int>((
+      ref,
+      conversationId,
+    ) {
       final currentUserId = ref.watch(authStateProvider).value?.id;
       return MessagesNotifier(
         ref.watch(chatRepositoryProvider),
@@ -29,6 +56,7 @@ class MessagesNotifier extends StateNotifier<AsyncValue<List<Message>>> {
   final ChatRepository _repo;
   final int _conversationId;
   final int? _currentUserId;
+  PrivateChannel? _channel;
 
   MessagesNotifier(this._repo, this._conversationId, this._currentUserId)
     : super(const AsyncValue.loading()) {
@@ -36,38 +64,37 @@ class MessagesNotifier extends StateNotifier<AsyncValue<List<Message>>> {
     _initEcho();
   }
 
+  @override
+  void dispose() {
+    _channel?.unsubscribe();
+    super.dispose();
+  }
+
   Future<void> _initEcho() async {
     try {
-      final channel = await EchoClient.subscribeToChat(_conversationId);
+      _channel = await EchoClient.subscribeToChat(_conversationId);
 
-      channel.bind('App\\Events\\MessageSent').listen((event) {
+      _channel!.bind('App\\Events\\MessageSent').listen((event) {
+        if (!mounted) return;
         try {
           dynamic data = event.data;
-          if (data is String) {
-            data = jsonDecode(data);
-          }
-
+          if (data is String) data = jsonDecode(data);
           if (data != null && data['message'] != null) {
             final newMsg = Message.fromJson(data['message']);
-
             if (newMsg.senderId == _currentUserId) return;
-
             if (state.hasValue) {
               final currentList = state.value!;
               if (!currentList.any((m) => m.id == newMsg.id)) {
                 state = AsyncValue.data([...currentList, newMsg]);
               }
             }
-
-            // Mark as read when receiving a new message
             _repo.markAsRead(_conversationId);
           }
         } catch (e) {
-          print('Error parsing WebSocket message: $e');
+          print('Error parsing WebSocket message: \$e');
         }
       });
-
-      channel.bind('App\\Events\\MessagesRead').listen((event) {
+      _channel!.bind('App\\Events\\MessagesRead').listen((event) {
         if (state.hasValue) {
           final currentList = state.value!;
           final now = DateTime.now();
@@ -82,7 +109,7 @@ class MessagesNotifier extends StateNotifier<AsyncValue<List<Message>>> {
         }
       });
     } catch (e) {
-      print('WebSocket Error: $e');
+      print('WebSocket Error: \$e');
     }
   }
 
@@ -96,12 +123,17 @@ class MessagesNotifier extends StateNotifier<AsyncValue<List<Message>>> {
     }
   }
 
-  Future<void> sendMessage(String? content, {String? imagePath}) async {
+  Future<void> sendMessage(
+    String? content, {
+    String? imagePath,
+    String? audioPath,
+  }) async {
     try {
       final newMsg = await _repo.sendMessage(
         _conversationId,
         content,
         imagePath: imagePath,
+        audioPath: audioPath,
       );
       if (state.hasValue) {
         state = AsyncValue.data([...state.value!, newMsg]);
@@ -120,14 +152,18 @@ class MessagesNotifier extends StateNotifier<AsyncValue<List<Message>>> {
           currentList.where((m) => m.id != messageId).toList(),
         );
       }
-    } catch (e) {
-      rethrow;
-    }
+    } catch (e) {}
   }
 
-  @override
-  void dispose() {
-    EchoClient.disconnect();
-    super.dispose();
+  Future<void> toggleReaction(int messageId, String emoji) async {
+    try {
+      final updatedMsg = await _repo.reactToMessage(messageId, emoji);
+      if (state.hasValue) {
+        final currentList = state.value!;
+        state = AsyncValue.data(
+          currentList.map((m) => m.id == messageId ? updatedMsg : m).toList(),
+        );
+      }
+    } catch (e) {}
   }
 }

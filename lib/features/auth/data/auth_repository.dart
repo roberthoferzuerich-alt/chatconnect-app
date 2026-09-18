@@ -19,12 +19,14 @@ class AuthRepository {
   Future<User?> updateProfile({
     String? name,
     String? about,
+    String? phone,
     File? avatar,
   }) async {
     try {
       final formData = FormData.fromMap({
         if (name != null) 'name': name,
         if (about != null) 'about': about,
+        if (phone != null) 'phone': phone,
         if (avatar != null) 'avatar': await MultipartFile.fromFile(avatar.path),
       });
 
@@ -55,17 +57,24 @@ class AuthRepository {
     }
   }
 
-  Future<User?> register(String name, String email, String password) async {
+  Future<User?> register(String name, String email, String phone, String password, {File? avatar}) async {
     try {
-      final response = await _dio.post(
-        'auth/register',
-        data: {
-          'name': name,
-          'email': email,
-          'password': password,
-          'password_confirmation': password,
-        },
-      );
+      var formData = FormData.fromMap({
+        'name': name,
+        'email': email,
+        'phone': phone,
+        'password': password,
+        'password_confirmation': password,
+      });
+
+      if (avatar != null) {
+        formData.files.add(MapEntry(
+          'avatar',
+          await MultipartFile.fromFile(avatar.path, filename: avatar.path.split('/').last),
+        ));
+      }
+
+      final response = await _dio.post('auth/register', data: formData);
 
       final token = response.data['data']['token'];
       await _storage.write(key: 'auth_token', value: token);
@@ -100,3 +109,4 @@ class AuthRepository {
     return token != null;
   }
 }
+

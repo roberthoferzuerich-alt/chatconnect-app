@@ -1,20 +1,26 @@
+import 'dart:async';
 import 'package:dart_pusher_channels/dart_pusher_channels.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'api_client.dart';
 
 final echoClientProvider = Provider<EchoClient?>((ref) {
   return null;
 });
 
+final echoConnectionStatusProvider = StreamProvider<String>((ref) async* {
+  await EchoClient.init();
+  yield* Stream.periodic(const Duration(seconds: 1), (_) {
+    return EchoClient.currentState;
+  });
+});
+
 class EchoClient {
   static PusherChannelsClient? _client;
+  static Timer? _watchdogTimer;
+  static String currentState = 'connecting';
 
   static Future<PusherChannelsClient> init() async {
     if (_client != null) return _client!;
-
-    const storage = FlutterSecureStorage();
-    final token = await storage.read(key: 'auth_token');
 
     final options = PusherChannelsOptions.fromHost(
       scheme: 'wss',
@@ -27,11 +33,32 @@ class EchoClient {
       options: options,
       connectionErrorHandler: (error, trace, refresh) {
         print('Pusher Connection Error: $error');
-        refresh();
+        currentState = 'disconnected';
       },
     );
 
+    // Auf echtes Connect-Event hören
+    _client!.onConnectionEstablished.listen((_) {
+      print('Pusher offiziell verbunden! Socket ID: ${_client!.socketId}');
+      currentState = 'connected';
+    });
+
     await _client!.connect();
+
+    // 1-Sekunden-Watchdog: Der verlässlichste Weg
+    _watchdogTimer ??= Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_client == null) return;
+
+      // Keine echte Verbindung -> Reconnect
+      if (currentState == 'disconnected') {
+        print('Watchdog: Websocket ist tot. Versuche Reconnect...');
+        currentState = 'connecting'; // Ampel auf Orange
+        try {
+          _client!.reconnect();
+        } catch (_) {}
+      }
+    });
+
     return _client!;
   }
 
@@ -41,7 +68,7 @@ class EchoClient {
     final token = await storage.read(key: 'auth_token');
 
     final channel = client.privateChannel(
-      'private-chat.$conversationId', // In Laravel Echo it's 'private-chat', the prefix is added automatically by Echo, but here we must add it manually or check Laravel's implementation. Actually Laravel channels are prefixed with 'private-' for Private channels.
+      'private-chat.$conversationId',
       authorizationDelegate:
           EndpointAuthorizableChannelTokenAuthorizationDelegate.forPrivateChannel(
             authorizationEndpoint: Uri.parse(
@@ -59,6 +86,8 @@ class EchoClient {
   }
 
   static void disconnect() {
+    _watchdogTimer?.cancel();
+    _watchdogTimer = null;
     _client?.disconnect();
     _client?.dispose();
     _client = null;

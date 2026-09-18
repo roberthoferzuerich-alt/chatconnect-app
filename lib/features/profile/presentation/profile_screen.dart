@@ -27,8 +27,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         await ref
             .read(authStateProvider.notifier)
             .updateProfile(avatar: File(pickedFile.path));
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Fehler beim Speichern: $e')));
+        }
       } finally {
-        setState(() => _isLoading = false);
+        if (mounted) setState(() => _isLoading = false);
       }
     }
   }
@@ -93,8 +99,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       setState(() => _isLoading = true);
       try {
         await onSave(result.trim());
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Fehler beim Speichern: $e')));
+        }
       } finally {
-        setState(() => _isLoading = false);
+        if (mounted) setState(() => _isLoading = false);
       }
     }
   }
@@ -112,64 +124,69 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ? 'https://rhz.internet-box.ch:8443/storage/${user.avatarPath}'
         : null;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Profil')),
+      appBar: AppBar(elevation: 0, title: const Text('Profil')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
-              padding: const EdgeInsets.all(16),
               children: [
+                const SizedBox(height: 16),
                 Center(
-                  child: Stack(
-                    children: [
-                      GestureDetector(
-                        onTap: _showImageSourceDialog,
-                        child: CircleAvatar(
-                          radius: 75,
-                          backgroundColor: Colors.grey.shade300,
-                          backgroundImage: avatarUrl != null
-                              ? CachedNetworkImageProvider(avatarUrl)
-                              : null,
-                          child: avatarUrl == null
-                              ? const Icon(
-                                  Icons.person,
-                                  size: 75,
-                                  color: Colors.white,
-                                )
-                              : null,
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            color: Colors.teal,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.camera_alt,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                        ),
-                      ),
-                    ],
+                  child: GestureDetector(
+                    onTap: _showImageSourceDialog,
+                    child: CircleAvatar(
+                      radius: 50,
+                      backgroundColor: isDark
+                          ? Colors.grey.shade800
+                          : Colors.grey.shade300,
+                      backgroundImage: avatarUrl != null
+                          ? CachedNetworkImageProvider(avatarUrl)
+                          : null,
+                      child: avatarUrl == null
+                          ? Icon(
+                              Icons.person,
+                              size: 50,
+                              color: isDark
+                                  ? Colors.grey.shade400
+                                  : Colors.white,
+                            )
+                          : null,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 12),
+                Center(
+                  child: InkWell(
+                    onTap: _showImageSourceDialog,
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        'Foto bearbeiten',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
                 ListTile(
-                  leading: const Icon(Icons.person, color: Colors.teal),
-                  title: const Text(
-                    'Name',
-                    style: TextStyle(color: Colors.grey, fontSize: 14),
-                  ),
-                  subtitle: Text(
-                    user.name,
-                    style: const TextStyle(fontSize: 18, color: Colors.black),
-                  ),
-                  trailing: const Icon(Icons.edit, color: Colors.teal),
+                  leading: const Icon(Icons.person_outline),
+                  title: Text(user.name, style: const TextStyle(fontSize: 16)),
                   onTap: () => _editField(
                     'Name',
                     user.name,
@@ -178,24 +195,80 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         .updateProfile(name: val),
                   ),
                 ),
-                const Divider(),
                 ListTile(
-                  leading: const Icon(Icons.info_outline, color: Colors.teal),
-                  title: const Text(
-                    'Info',
-                    style: TextStyle(color: Colors.grey, fontSize: 14),
+                  leading: const Icon(Icons.phone_outlined),
+                  title: Text(
+                    user.phone != null && user.phone!.isNotEmpty
+                        ? user.phone!
+                        : 'Natel Nummer hinzufügen',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: user.phone != null && user.phone!.isNotEmpty
+                          ? null
+                          : Theme.of(context).colorScheme.primary,
+                    ),
                   ),
-                  subtitle: Text(
-                    user.about ?? 'Hey there! I am using ChatConnect.',
-                    style: const TextStyle(fontSize: 18, color: Colors.black),
+                  onTap: () => _editField(
+                    'Natel Nummer',
+                    user.phone ?? '',
+                    (val) => ref
+                        .read(authStateProvider.notifier)
+                        .updateProfile(phone: val),
                   ),
-                  trailing: const Icon(Icons.edit, color: Colors.teal),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.edit_outlined),
+                  title: const Text('Info', style: TextStyle(fontSize: 16)),
+                  subtitle: user.about != null && user.about!.isNotEmpty
+                      ? Text(user.about!)
+                      : null,
                   onTap: () => _editField(
                     'Info',
                     user.about ?? '',
                     (val) => ref
                         .read(authStateProvider.notifier)
                         .updateProfile(about: val),
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.workspace_premium_outlined),
+                  title: const Text(
+                    'Abzeichen',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  onTap: () {},
+                ),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 16.0,
+                  ),
+                  child: Text(
+                    'Dein Profil und Änderungen daran sind für Personen, an die du Nachrichten verschickst, deine Kontakte und Gruppen sichtbar.',
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                  ),
+                ),
+
+                const Divider(thickness: 1, height: 1),
+
+                ListTile(
+                  leading: const Icon(Icons.alternate_email),
+                  title: const Text(
+                    'Nutzername',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  onTap: () {},
+                ),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 8.0,
+                  ),
+                  child: Text(
+                    'Andere können dir jetzt über deinen optionalen Nutzernamen eine Nachricht schicken, sodass du deine Telefonnummer nicht mehr herausgeben musst.',
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
                   ),
                 ),
               ],

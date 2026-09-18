@@ -4,6 +4,7 @@ import '../../../core/api/api_client.dart';
 import '../../auth/domain/user_model.dart';
 import '../domain/conversation_model.dart';
 import '../domain/message_model.dart';
+import '../domain/call_record.dart';
 
 final chatRepositoryProvider = Provider<ChatRepository>((ref) {
   return ChatRepository(ref.read(apiClientProvider));
@@ -28,21 +29,54 @@ class ChatRepository {
     return Conversation.fromJson(res.data);
   }
 
+  Future<Conversation> startGroupConversation(
+    List<int> userIds, {
+    String? name,
+  }) async {
+    final res = await _dio.post(
+      'conversations/group',
+      data: {'user_ids': userIds, 'name': name},
+    );
+    return Conversation.fromJson(res.data);
+  }
+
   Future<List<Message>> getMessages(int conversationId) async {
     final res = await _dio.get('conversations/$conversationId/messages');
     return (res.data as List).map((e) => Message.fromJson(e)).toList();
+  }
+
+  Future<List<CallRecord>> getCalls() async {
+    final res = await _dio.get('calls');
+    return (res.data as List).map((e) => CallRecord.fromJson(e)).toList();
+  }
+
+  Future<CallRecord> logCall({
+    required int receiverId,
+    required bool isVideo,
+  }) async {
+    final res = await _dio.post(
+      'calls',
+      data: {
+        'receiver_id': receiverId,
+        'type': isVideo ? 'video' : 'audio',
+        'status': 'completed',
+      },
+    );
+    return CallRecord.fromJson(res.data);
   }
 
   Future<Message> sendMessage(
     int conversationId,
     String? content, {
     String? imagePath,
+    String? audioPath,
   }) async {
     FormData? formData;
-    if (imagePath != null) {
+    if (imagePath != null || audioPath != null) {
       formData = FormData.fromMap({
         if (content != null && content.isNotEmpty) 'content': content,
-        'image': await MultipartFile.fromFile(imagePath),
+        if (imagePath != null) 'image': await MultipartFile.fromFile(imagePath),
+        if (audioPath != null) 'audio': await MultipartFile.fromFile(audioPath),
       });
     }
 
@@ -57,7 +91,31 @@ class ChatRepository {
     await _dio.post('conversations/$conversationId/read');
   }
 
+  Future<void> markAllAsRead() async {
+    await _dio.post('messages/mark-all-read');
+  }
+
   Future<void> deleteMessage(int messageId) async {
-    await _dio.delete('messages/$messageId');
+    await _dio.post('messages/$messageId/delete');
+  }
+
+  Future<Message> reactToMessage(int messageId, String emoji) async {
+    final response = await _dio.post(
+      'messages/$messageId/react',
+      data: {'reaction': emoji},
+    );
+    return Message.fromJson(response.data);
+  }
+
+  Future<List<User>> syncContacts(List<String> phones) async {
+    final response = await _dio.post(
+      'users/sync-contacts',
+      data: {'phones': phones},
+    );
+    return (response.data as List).map((json) => User.fromJson(json)).toList();
+  }
+
+  Future<void> deleteConversation(int id) async {
+    await _dio.delete('conversations/$id');
   }
 }

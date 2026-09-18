@@ -2,6 +2,7 @@ class User {
   final int id;
   final String name;
   final String email;
+  final String? phone;
   final String? avatarPath;
   final String? about;
   final bool isOnline;
@@ -10,6 +11,7 @@ class User {
     required this.id,
     required this.name,
     required this.email,
+    this.phone,
     this.avatarPath,
     this.about,
     required this.isOnline,
@@ -20,6 +22,7 @@ class User {
       id: json['id'],
       name: json['name'],
       email: json['email'],
+      phone: json['phone'],
       avatarPath: json['avatar_path'],
       about: json['about'],
       isOnline: json['is_online'] ?? false,
