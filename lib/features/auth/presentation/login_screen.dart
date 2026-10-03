@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'auth_provider.dart';
+import 'widgets/server_status_chip.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -102,7 +103,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       color: Colors.deepPurple,
                     ),
                   ),
-                  const SizedBox(height: 48),
+                  const SizedBox(height: 12),
+                  const Center(child: ServerStatusChip()),
+                  const SizedBox(height: 36),
 
                   TextFormField(
                     controller: _emailController,

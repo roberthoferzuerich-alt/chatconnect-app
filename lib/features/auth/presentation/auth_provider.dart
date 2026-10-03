@@ -20,6 +20,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
 
   Future<void> updateProfile({
     String? name,
+    String? email,
     String? about,
     String? phone,
     File? avatar,
@@ -27,6 +28,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
     try {
       final updatedUser = await _repository.updateProfile(
         name: name,
+        email: email,
         about: about,
         phone: phone,
         avatar: avatar,

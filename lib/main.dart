@@ -23,25 +23,30 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   HttpOverrides.global = MyHttpOverrides();
 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  try {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  } catch (e) {
+    debugPrint('Firebase init error: $e');
+  }
 
-  final navigatorKey = rootNavigatorKey;
-  ZegoUIKitPrebuiltCallInvitationService().setNavigatorKey(navigatorKey);
-
-  ZegoUIKit().initLog().then((value) {
+  try {
+    final navigatorKey = rootNavigatorKey;
+    ZegoUIKitPrebuiltCallInvitationService().setNavigatorKey(navigatorKey);
     ZegoUIKitPrebuiltCallInvitationService().useSystemCallingUI([
       ZegoUIKitSignalingPlugin(),
     ]);
+  } catch (e) {
+    debugPrint('Zego init error: $e');
+  }
 
-    final container = ProviderContainer();
+  final container = ProviderContainer();
 
-    runApp(
-      UncontrolledProviderScope(
-        container: container,
-        child: const ChatConnectApp(),
-      ),
-    );
-  });
+  runApp(
+    UncontrolledProviderScope(
+      container: container,
+      child: const ChatConnectApp(),
+    ),
+  );
 }
 
 class ChatConnectApp extends ConsumerWidget {

@@ -65,7 +65,10 @@ class ChatListScreen extends ConsumerWidget {
         ),
         actions: [
           const Center(child: ConnectionIndicator()),
-          IconButton(icon: const Icon(Icons.search), onPressed: () {}),
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () => context.push('/search'),
+          ),
           PopupMenuButton<String>(
             onSelected: (value) {
               if (value == 'logout') {

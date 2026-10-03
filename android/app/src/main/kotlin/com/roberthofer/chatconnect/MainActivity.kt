@@ -1,4 +1,4 @@
-package com.chatconnect.app
+package com.roberthofer.chatconnect
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -254,11 +254,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
                 ListTile(
                   leading: const Icon(Icons.alternate_email),
-                  title: const Text(
-                    'Nutzername',
-                    style: TextStyle(fontSize: 16),
+                  title: Text(user.email, style: const TextStyle(fontSize: 16)),
+                  onTap: () => _editField(
+                    'Email / Nutzername',
+                    user.email,
+                    (val) => ref
+                        .read(authStateProvider.notifier)
+                        .updateProfile(email: val),
                   ),
-                  onTap: () {},
                 ),
 
                 Padding(
