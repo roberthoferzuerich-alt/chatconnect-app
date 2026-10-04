@@ -23,7 +23,7 @@ class User {
       name: json['name'],
       email: json['email'],
       phone: json['phone'],
-      avatarPath: json['avatar_path'],
+      avatarPath: json['avatar_path'] ?? json['avatar'],
       about: json['about'],
       isOnline: json['is_online'] ?? false,
     );

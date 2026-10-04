@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../data/chat_repository.dart';
 import '../../auth/domain/user_model.dart';
 import 'chat_providers.dart';
@@ -73,10 +74,28 @@ class _UserSearchScreenState extends ConsumerState<UserSearchScreen> {
               itemCount: _users.length,
               itemBuilder: (context, index) {
                 final user = _users[index];
+                final avatarUrl = user.avatarPath != null && user.avatarPath!.isNotEmpty
+                    ? 'https://rhz.internet-box.ch:8443/storage/${user.avatarPath}'
+                    : null;
+
                 return ListTile(
-                  leading: CircleAvatar(child: Text(user.name[0])),
-                  title: Text(user.name),
-                  subtitle: Text(user.email),
+                  leading: CircleAvatar(
+                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                    backgroundImage: avatarUrl != null
+                        ? CachedNetworkImageProvider(avatarUrl)
+                        : null,
+                    child: avatarUrl == null
+                        ? Text(
+                            user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onPrimaryContainer,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          )
+                        : null,
+                  ),
+                  title: Text(user.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  subtitle: Text(user.about != null && user.about!.isNotEmpty ? user.about! : user.email),
                   onTap: () => _startChat(user.id),
                 );
               },
