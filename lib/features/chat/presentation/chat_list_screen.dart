@@ -169,6 +169,12 @@ class ChatListScreen extends ConsumerWidget {
                       (u) => u.id != currentUser?.id,
                       orElse: () => convo.users.first,
                     );
+                    final avatarUrl = !convo.isGroup &&
+                            otherUser.avatarPath != null &&
+                            otherUser.avatarPath!.isNotEmpty
+                        ? 'https://rhz.internet-box.ch:8443/storage/${otherUser.avatarPath}'
+                        : null;
+
                     return Dismissible(
                       key: Key('convo_${convo.id}'),
                       background: Container(
@@ -211,15 +217,39 @@ class ChatListScreen extends ConsumerWidget {
                         }
                       },
                       child: ListTile(
-                        leading: CircleAvatar(child: Text(otherUser.name[0])),
+                        leading: CircleAvatar(
+                          radius: 24,
+                          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                          backgroundImage: avatarUrl != null
+                              ? CachedNetworkImageProvider(avatarUrl)
+                              : null,
+                          child: avatarUrl == null
+                              ? (convo.isGroup
+                                  ? Icon(
+                                      Icons.group,
+                                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                    )
+                                  : Text(
+                                      otherUser.name.isNotEmpty
+                                          ? otherUser.name[0].toUpperCase()
+                                          : '?',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                      ),
+                                    ))
+                              : null,
+                        ),
                         title: Text(
                           convo.isGroup
                               ? convo.name ?? 'Gruppe'
                               : otherUser.name,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
                         subtitle: Text(
                           convo.lastMessage?.content ?? 'Keine Nachrichten',
                           maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         onTap: () => context.push('/chat/${convo.id}'),
                       ),

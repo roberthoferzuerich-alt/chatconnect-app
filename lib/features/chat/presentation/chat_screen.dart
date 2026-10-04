@@ -386,7 +386,51 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(chatTitle),
+          titleSpacing: 0,
+          title: Row(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                backgroundImage: (conversation != null &&
+                        !conversation.isGroup &&
+                        otherUser?.avatarPath != null &&
+                        otherUser!.avatarPath!.isNotEmpty)
+                    ? CachedNetworkImageProvider(
+                        'https://rhz.internet-box.ch:8443/storage/${otherUser.avatarPath}',
+                      )
+                    : null,
+                child: (conversation != null &&
+                        !conversation.isGroup &&
+                        otherUser?.avatarPath != null &&
+                        otherUser!.avatarPath!.isNotEmpty)
+                    ? null
+                    : (conversation?.isGroup ?? false
+                        ? Icon(
+                            Icons.group,
+                            size: 20,
+                            color: Theme.of(context).colorScheme.onPrimaryContainer,
+                          )
+                        : Text(
+                            (otherUser?.name.isNotEmpty ?? false)
+                                ? otherUser!.name[0].toUpperCase()
+                                : '?',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onPrimaryContainer,
+                            ),
+                          )),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  chatTitle,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
           actions: [
             const Center(child: ConnectionIndicator()),
             if (otherUser != null) ...[
