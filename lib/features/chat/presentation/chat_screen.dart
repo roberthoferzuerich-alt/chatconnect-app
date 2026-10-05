@@ -9,6 +9,7 @@ import '../domain/message_model.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../../core/widgets/app_avatar.dart';
 import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -389,38 +390,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           titleSpacing: 0,
           title: Row(
             children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                backgroundImage: (conversation != null &&
-                        !conversation.isGroup &&
-                        otherUser?.avatarPath != null &&
-                        otherUser!.avatarPath!.isNotEmpty)
-                    ? CachedNetworkImageProvider(
-                        'https://rhz.internet-box.ch:8443/storage/${otherUser.avatarPath}',
-                      )
+              AppAvatar(
+                avatarUrl: (conversation != null && !conversation.isGroup)
+                    ? otherUser?.fullAvatarUrl
                     : null,
-                child: (conversation != null &&
-                        !conversation.isGroup &&
-                        otherUser?.avatarPath != null &&
-                        otherUser!.avatarPath!.isNotEmpty)
-                    ? null
-                    : (conversation?.isGroup ?? false
-                        ? Icon(
-                            Icons.group,
-                            size: 20,
-                            color: Theme.of(context).colorScheme.onPrimaryContainer,
-                          )
-                        : Text(
-                            (otherUser?.name.isNotEmpty ?? false)
-                                ? otherUser!.name[0].toUpperCase()
-                                : '?',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.onPrimaryContainer,
-                            ),
-                          )),
+                name: (conversation?.isGroup ?? false)
+                    ? (chatTitle)
+                    : (otherUser?.name ?? chatTitle),
+                isGroup: conversation?.isGroup ?? false,
+                radius: 18,
               ),
               const SizedBox(width: 10),
               Expanded(

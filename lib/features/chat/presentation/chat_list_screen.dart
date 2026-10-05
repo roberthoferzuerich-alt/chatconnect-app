@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../../core/widgets/app_avatar.dart';
 import '../../auth/presentation/auth_provider.dart';
 import '../data/chat_repository.dart';
 import 'chat_providers.dart';
@@ -33,30 +34,17 @@ class ChatListScreen extends ConsumerWidget {
     final archivedIds = ref.watch(archivedChatIdsProvider);
     final showUnreadOnly = ref.watch(unreadFilterProvider);
 
-    final avatarUrl = currentUser?.avatarPath != null
-        ? 'https://rhz.internet-box.ch:8443/storage/${currentUser!.avatarPath}'
-        : null;
+    final avatarUrl = currentUser?.fullAvatarUrl;
 
     return Scaffold(
       appBar: AppBar(
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
-          child: GestureDetector(
+          child: AppAvatar(
+            avatarUrl: avatarUrl,
+            name: currentUser?.name ?? '',
+            radius: 20,
             onTap: () => context.push('/settings'),
-            child: CircleAvatar(
-              backgroundColor: Colors.grey.shade300,
-              backgroundImage: avatarUrl != null
-                  ? CachedNetworkImageProvider(avatarUrl)
-                  : null,
-              child: avatarUrl == null && currentUser?.name != null
-                  ? Text(
-                      currentUser!.name[0].toUpperCase(),
-                      style: const TextStyle(color: Colors.black),
-                    )
-                  : avatarUrl == null
-                  ? const Icon(Icons.person, color: Colors.white)
-                  : null,
-            ),
           ),
         ),
         title: const Text(
@@ -169,11 +157,7 @@ class ChatListScreen extends ConsumerWidget {
                       (u) => u.id != currentUser?.id,
                       orElse: () => convo.users.first,
                     );
-                    final avatarUrl = !convo.isGroup &&
-                            otherUser.avatarPath != null &&
-                            otherUser.avatarPath!.isNotEmpty
-                        ? 'https://rhz.internet-box.ch:8443/storage/${otherUser.avatarPath}'
-                        : null;
+                    final avatarUrl = !convo.isGroup ? otherUser.fullAvatarUrl : null;
 
                     return Dismissible(
                       key: Key('convo_${convo.id}'),
@@ -217,28 +201,13 @@ class ChatListScreen extends ConsumerWidget {
                         }
                       },
                       child: ListTile(
-                        leading: CircleAvatar(
+                        leading: AppAvatar(
+                          avatarUrl: avatarUrl,
+                          name: convo.isGroup
+                              ? (convo.name ?? 'Gruppe')
+                              : otherUser.name,
+                          isGroup: convo.isGroup,
                           radius: 24,
-                          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                          backgroundImage: avatarUrl != null
-                              ? CachedNetworkImageProvider(avatarUrl)
-                              : null,
-                          child: avatarUrl == null
-                              ? (convo.isGroup
-                                  ? Icon(
-                                      Icons.group,
-                                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                                    )
-                                  : Text(
-                                      otherUser.name.isNotEmpty
-                                          ? otherUser.name[0].toUpperCase()
-                                          : '?',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: Theme.of(context).colorScheme.onPrimaryContainer,
-                                      ),
-                                    ))
-                              : null,
                         ),
                         title: Text(
                           convo.isGroup
@@ -520,20 +489,10 @@ class _StoryBar extends ConsumerWidget {
                                 width: 2,
                               ),
                             ),
-                            child: CircleAvatar(
+                            child: AppAvatar(
+                              avatarUrl: currentUser?.fullAvatarUrl,
+                              name: currentUser?.name ?? '',
                               radius: 28,
-                              backgroundColor: Colors.grey.shade200,
-                              backgroundImage: currentUser?.avatarPath != null
-                                  ? CachedNetworkImageProvider(
-                                      'https://rhz.internet-box.ch:8443/storage/${currentUser!.avatarPath}',
-                                    )
-                                  : null,
-                              child: currentUser?.avatarPath == null
-                                  ? Icon(
-                                      Icons.person,
-                                      color: Colors.grey.shade400,
-                                    )
-                                  : null,
                             ),
                           ),
                           if (myGroup == null || myGroup.stories.isEmpty)
@@ -587,17 +546,10 @@ class _StoryBar extends ConsumerWidget {
                               width: 2,
                             ),
                           ),
-                          child: CircleAvatar(
+                          child: AppAvatar(
+                            avatarUrl: group.user.fullAvatarUrl,
+                            name: group.user.name,
                             radius: 28,
-                            backgroundColor: Colors.grey.shade200,
-                            backgroundImage: group.user.avatarPath != null
-                                ? CachedNetworkImageProvider(
-                                    'https://rhz.internet-box.ch:8443/storage/${group.user.avatarPath}',
-                                  )
-                                : null,
-                            child: group.user.avatarPath == null
-                                ? Text(group.user.name[0])
-                                : null,
                           ),
                         ),
                         const SizedBox(height: 4),

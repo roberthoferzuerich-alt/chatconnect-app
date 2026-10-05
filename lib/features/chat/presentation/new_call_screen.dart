@@ -4,6 +4,7 @@ import 'package:zego_uikit/zego_uikit.dart';
 import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../../core/widgets/app_avatar.dart';
 import '../data/chat_repository.dart';
 import '../../auth/domain/user_model.dart';
 import '../../auth/presentation/auth_provider.dart';
@@ -195,20 +196,10 @@ class _NewCallScreenState extends ConsumerState<NewCallScreen> {
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 24.0,
                             ),
-                            leading: CircleAvatar(
-                              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                              backgroundImage: user.fullAvatarUrl != null
-                                  ? CachedNetworkImageProvider(user.fullAvatarUrl!)
-                                  : null,
-                              child: user.fullAvatarUrl == null
-                                  ? Text(
-                                      user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.onPrimaryContainer,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    )
-                                  : null,
+                            leading: AppAvatar(
+                              avatarUrl: user.fullAvatarUrl,
+                              name: user.name,
+                              radius: 20,
                             ),
                             title: Text(
                               user.name,

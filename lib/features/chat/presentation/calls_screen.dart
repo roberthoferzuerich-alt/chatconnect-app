@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../../core/widgets/app_avatar.dart';
 import 'chat_providers.dart';
 import '../../auth/presentation/auth_provider.dart';
 
@@ -87,20 +88,10 @@ class _CallsScreenState extends ConsumerState<CallsScreen> {
                   : Icons.phone;
 
               return ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                  backgroundImage: avatarUrl != null
-                      ? CachedNetworkImageProvider(avatarUrl)
-                      : null,
-                  child: avatarUrl == null
-                      ? Text(
-                          otherName.isNotEmpty ? otherName[0].toUpperCase() : '?',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onPrimaryContainer,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        )
-                      : null,
+                leading: AppAvatar(
+                  avatarUrl: avatarUrl,
+                  name: otherName,
+                  radius: 20,
                 ),
                 title: Text(
                   otherName,

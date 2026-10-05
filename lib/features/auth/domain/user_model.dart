@@ -19,21 +19,35 @@ class User {
 
   String? get fullAvatarUrl {
     final raw = avatarPath;
-    if (raw == null || raw.isEmpty) return null;
+    if (raw == null || raw.trim().isEmpty) return null;
     if (raw.startsWith('http://') || raw.startsWith('https://')) {
       return raw;
     }
-    final clean = raw.replaceFirst(RegExp(r'^/?storage/'), '').replaceFirst(RegExp(r'^/'), '');
+    var clean = raw.replaceAll(RegExp(r'^/+'), '');
+    while (clean.startsWith('storage/')) {
+      clean = clean.substring('storage/'.length).replaceAll(RegExp(r'^/+'), '');
+    }
+    if (clean.isEmpty) return null;
     return 'https://rhz.internet-box.ch:8443/storage/$clean';
   }
 
   factory User.fromJson(Map<String, dynamic> json) {
+    String? rawPath = json['avatar_path'] ?? json['avatar'] ?? json['avatar_url'];
+    if (rawPath != null) {
+      if (!rawPath.startsWith('http://') && !rawPath.startsWith('https://')) {
+        rawPath = rawPath.replaceAll(RegExp(r'^/+'), '');
+        while (rawPath!.startsWith('storage/')) {
+          rawPath = rawPath.substring('storage/'.length).replaceAll(RegExp(r'^/+'), '');
+        }
+      }
+    }
+
     return User(
       id: json['id'],
-      name: json['name'],
-      email: json['email'],
+      name: json['name'] ?? '',
+      email: json['email'] ?? '',
       phone: json['phone'],
-      avatarPath: json['avatar_url'] ?? json['avatar_path'] ?? json['avatar'],
+      avatarPath: rawPath,
       about: json['about'],
       isOnline: json['is_online'] ?? false,
     );
