@@ -375,7 +375,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         ? [ZegoUIKitUser(id: otherUser.id.toString(), name: otherUser.name)]
         : <ZegoUIKitUser>[];
 
-    final chatsSettings = ref.watch(chatsSettingsProvider);
     final hasLocalWallpaper = chatsSettings.wallpaperPath != null &&
         File(chatsSettings.wallpaperPath!).existsSync();
     final hasServerWallpaper = currentUser?.fullWallpaperUrl != null;
