@@ -1,5 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dio/dio.dart';
+import '../../../core/api/api_client.dart';
+import '../../auth/presentation/auth_provider.dart';
 
 class ChatsSettingsState {
   final bool generateLinkPreviews;
@@ -9,6 +12,7 @@ class ChatsSettingsState {
   final bool sendWithEnter;
   final double imageUploadSize;
   final double thumbnailSize;
+  final String? wallpaperPath;
 
   ChatsSettingsState({
     this.generateLinkPreviews = true,
@@ -18,6 +22,7 @@ class ChatsSettingsState {
     this.sendWithEnter = false,
     this.imageUploadSize = 1024.0,
     this.thumbnailSize = 100.0,
+    this.wallpaperPath,
   });
 
   ChatsSettingsState copyWith({
@@ -28,6 +33,8 @@ class ChatsSettingsState {
     bool? sendWithEnter,
     double? imageUploadSize,
     double? thumbnailSize,
+    String? wallpaperPath,
+    bool clearWallpaper = false,
   }) {
     return ChatsSettingsState(
       generateLinkPreviews: generateLinkPreviews ?? this.generateLinkPreviews,
@@ -38,6 +45,7 @@ class ChatsSettingsState {
       sendWithEnter: sendWithEnter ?? this.sendWithEnter,
       imageUploadSize: imageUploadSize ?? this.imageUploadSize,
       thumbnailSize: thumbnailSize ?? this.thumbnailSize,
+      wallpaperPath: clearWallpaper ? null : (wallpaperPath ?? this.wallpaperPath),
     );
   }
 }
@@ -59,7 +67,38 @@ class ChatsSettingsNotifier extends Notifier<ChatsSettingsState> {
       sendWithEnter: prefs.getBool('sendWithEnter') ?? false,
       imageUploadSize: prefs.getDouble('imageUploadSize') ?? 1024.0,
       thumbnailSize: prefs.getDouble('thumbnailSize') ?? 100.0,
+      wallpaperPath: prefs.getString('chat_wallpaper_path'),
     );
+  }
+
+  Future<void> setWallpaper(String path) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('chat_wallpaper_path', path);
+    state = state.copyWith(wallpaperPath: path);
+
+    // Sync to backend asynchronously
+    try {
+      final dio = ref.read(apiClientProvider);
+      final formData = FormData.fromMap({
+        'wallpaper': await MultipartFile.fromFile(path),
+      });
+      await dio.post('auth/profile/wallpaper', data: formData);
+      ref.invalidate(authStateProvider);
+    } catch (_) {
+      // Local wallpaper is always preserved offline
+    }
+  }
+
+  Future<void> resetWallpaper() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('chat_wallpaper_path');
+    state = state.copyWith(clearWallpaper: true);
+
+    try {
+      final dio = ref.read(apiClientProvider);
+      await dio.delete('auth/profile/wallpaper');
+      ref.invalidate(authStateProvider);
+    } catch (_) {}
   }
 
   Future<void> updateSetting(String key, bool value) async {

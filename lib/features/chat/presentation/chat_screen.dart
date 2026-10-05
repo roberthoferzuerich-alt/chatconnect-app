@@ -375,6 +375,24 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         ? [ZegoUIKitUser(id: otherUser.id.toString(), name: otherUser.name)]
         : <ZegoUIKitUser>[];
 
+    final chatsSettings = ref.watch(chatsSettingsProvider);
+    final hasLocalWallpaper = chatsSettings.wallpaperPath != null &&
+        File(chatsSettings.wallpaperPath!).existsSync();
+    final hasServerWallpaper = currentUser?.fullWallpaperUrl != null;
+
+    DecorationImage? wallpaperDecoration;
+    if (hasLocalWallpaper) {
+      wallpaperDecoration = DecorationImage(
+        image: FileImage(File(chatsSettings.wallpaperPath!)),
+        fit: BoxFit.cover,
+      );
+    } else if (hasServerWallpaper) {
+      wallpaperDecoration = DecorationImage(
+        image: CachedNetworkImageProvider(currentUser!.fullWallpaperUrl!),
+        fit: BoxFit.cover,
+      );
+    }
+
     return PopScope(
       canPop: !_emojiShowing,
       onPopInvoked: (didPop) {
@@ -446,10 +464,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ],
           ],
         ),
-        body: Column(
-          children: [
-            Expanded(
-              child: messagesState.when(
+        body: Container(
+          decoration: BoxDecoration(
+            color: wallpaperDecoration == null
+                ? Theme.of(context).scaffoldBackgroundColor
+                : null,
+            image: wallpaperDecoration,
+          ),
+          child: Column(
+            children: [
+              Expanded(
+                child: messagesState.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (e, _) => Center(child: Text('Fehler: $e')),
                 data: (messages) {
@@ -658,9 +683,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 padding: EdgeInsets.all(8.0),
                 child: LinearProgressIndicator(),
               ),
-            SafeArea(
-              child: Column(
-                children: [
+            Container(
+              color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.95),
+              child: SafeArea(
+                child: Column(
+                  children: [
                   if (_attachedImagePath != null)
                     Padding(
                       padding: const EdgeInsets.symmetric(
@@ -799,6 +826,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   ),
                 ],
               ),
+            ),
             ),
             if (_emojiShowing && !chatsSettings.useSystemEmojis)
               SizedBox(
