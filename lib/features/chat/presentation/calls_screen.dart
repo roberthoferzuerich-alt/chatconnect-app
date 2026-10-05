@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'chat_providers.dart';
 import '../../auth/presentation/auth_provider.dart';
 
@@ -72,6 +73,7 @@ class _CallsScreenState extends ConsumerState<CallsScreen> {
               final isOutgoing = call.callerId == currentUser?.id;
               final otherUser = isOutgoing ? call.receiver : call.caller;
               final otherName = otherUser?.name ?? 'Unbekannt';
+              final avatarUrl = otherUser?.fullAvatarUrl;
 
               final timeString = DateFormat(
                 'dd.MM.yyyy HH:mm',
@@ -86,9 +88,19 @@ class _CallsScreenState extends ConsumerState<CallsScreen> {
 
               return ListTile(
                 leading: CircleAvatar(
-                  backgroundColor: Colors.blue.shade100,
-                  foregroundColor: Colors.blue.shade900,
-                  child: Text(otherName[0].toUpperCase()),
+                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                  backgroundImage: avatarUrl != null
+                      ? CachedNetworkImageProvider(avatarUrl)
+                      : null,
+                  child: avatarUrl == null
+                      ? Text(
+                          otherName.isNotEmpty ? otherName[0].toUpperCase() : '?',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onPrimaryContainer,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )
+                      : null,
                 ),
                 title: Text(
                   otherName,

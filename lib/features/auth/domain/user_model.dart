@@ -17,13 +17,23 @@ class User {
     required this.isOnline,
   });
 
+  String? get fullAvatarUrl {
+    final raw = avatarPath;
+    if (raw == null || raw.isEmpty) return null;
+    if (raw.startsWith('http://') || raw.startsWith('https://')) {
+      return raw;
+    }
+    final clean = raw.replaceFirst(RegExp(r'^/?storage/'), '').replaceFirst(RegExp(r'^/'), '');
+    return 'https://rhz.internet-box.ch:8443/storage/$clean';
+  }
+
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       id: json['id'],
       name: json['name'],
       email: json['email'],
       phone: json['phone'],
-      avatarPath: json['avatar_path'] ?? json['avatar'],
+      avatarPath: json['avatar_url'] ?? json['avatar_path'] ?? json['avatar'],
       about: json['about'],
       isOnline: json['is_online'] ?? false,
     );
