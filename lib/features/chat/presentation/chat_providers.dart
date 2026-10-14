@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -57,17 +58,39 @@ class MessagesNotifier extends StateNotifier<AsyncValue<List<Message>>> {
   final int _conversationId;
   final int? _currentUserId;
   PrivateChannel? _channel;
+  Timer? _pollingTimer;
 
   MessagesNotifier(this._repo, this._conversationId, this._currentUserId)
     : super(const AsyncValue.loading()) {
     loadMessages();
     _initEcho();
+    _pollingTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      _pollNewMessages();
+    });
   }
 
   @override
   void dispose() {
+    _pollingTimer?.cancel();
     _channel?.unsubscribe();
     super.dispose();
+  }
+
+  Future<void> _pollNewMessages() async {
+    if (!mounted) return;
+    try {
+      final msgs = await _repo.getMessages(_conversationId);
+      if (!mounted) return;
+      if (state.hasValue) {
+        final currentMsgs = state.value!;
+        if (msgs.length != currentMsgs.length ||
+            (msgs.isNotEmpty &&
+                currentMsgs.isNotEmpty &&
+                msgs.last.id != currentMsgs.last.id)) {
+          state = AsyncValue.data(msgs);
+        }
+      }
+    } catch (_) {}
   }
 
   Future<void> _initEcho() async {

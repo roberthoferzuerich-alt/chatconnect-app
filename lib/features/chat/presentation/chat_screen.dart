@@ -129,7 +129,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       Future.delayed(const Duration(milliseconds: 100), () {
         if (_scrollCtrl.hasClients) {
           _scrollCtrl.animateTo(
-            _scrollCtrl.position.maxScrollExtent,
+            0.0,
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeOut,
           );
@@ -328,7 +328,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         Future.delayed(const Duration(milliseconds: 200), () {
           if (_scrollCtrl.hasClients) {
             _scrollCtrl.animateTo(
-              _scrollCtrl.position.maxScrollExtent,
+              0.0,
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeOut,
             );
