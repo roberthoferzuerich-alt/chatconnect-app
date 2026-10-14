@@ -131,6 +131,19 @@ class MessagesNotifier extends StateNotifier<AsyncValue<List<Message>>> {
           );
         }
       });
+      _channel!.bind('App\\Events\\MessageDeleted').listen((event) {
+        if (!mounted) return;
+        try {
+          dynamic data = event.data;
+          if (data is String) data = jsonDecode(data);
+          final deletedId = data['messageId'] ?? data['message_id'];
+          if (deletedId != null && state.hasValue) {
+            state = AsyncValue.data(
+              state.value!.where((m) => m.id != deletedId).toList(),
+            );
+          }
+        } catch (_) {}
+      });
     } catch (e) {
       print('WebSocket Error: \$e');
     }

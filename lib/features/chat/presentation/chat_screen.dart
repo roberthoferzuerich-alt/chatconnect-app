@@ -281,13 +281,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   ).showSnackBar(const SnackBar(content: Text('Kopiert!')));
                 },
               ),
-            if (isMe)
-              ListTile(
-                leading: const Icon(Icons.delete, color: Colors.red),
-                title: const Text(
-                  'Löschen',
-                  style: TextStyle(color: Colors.red),
-                ),
+            ListTile(
+              leading: const Icon(Icons.delete, color: Colors.red),
+              title: const Text(
+                'Löschen',
+                style: TextStyle(color: Colors.red),
+              ),
                 onTap: () async {
                   Navigator.pop(context);
                   try {
