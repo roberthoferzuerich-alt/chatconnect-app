@@ -1,90 +1,101 @@
 const String appUserGuideMarkdown = '''
-# 👋 Willkommen bei ChatConnect
+# 📖 ChatConnect Benutzerhandbuch & Anleitung
 
-Willkommen bei **ChatConnect**, deinem neuen und sicheren Messenger! In dieser Anleitung erfährst du, wie du die App optimal nutzt.
-
----
-
-## 🚀 Erste Schritte
-
-### 1. Ein Profil einrichten
-Nach der Registrierung solltest du zuerst dein Profil einrichten.
-* Tippe auf der Hauptseite oben rechts auf das **Drei-Punkte-Menü** und wähle **Einstellungen** (oder klicke direkt auf dein **Profilbild** oben links).
-* Klicke auf **Profil bearbeiten**.
-* Du kannst dort dein **Profilbild ändern**, deinen **Namen** anpassen, eine **Info** (Status) hinzufügen und deine **Natel Nummer** eintragen. Deine Änderungen werden sicher auf dem Server gespeichert.
-
-### 2. Einen neuen Chat starten
-Um mit jemandem zu chatten, klicke unten rechts auf der Hauptseite auf den runden, hellblauen **Stift-Button**.
-* Suche in der Liste nach dem Namen deines Kontakts.
-* Tippe auf den Namen, und der Chat wird sofort eröffnet.
+Willkommen bei **ChatConnect**, deinem sicheren und modernen Messenger für Familie und Freunde! Diese Anleitung erklärt dir Schritt für Schritt alle Funktionen auf dem **Tablet/Smartphone (Android-App)** sowie auf dem **Laptop/PC (WebApp)**.
 
 ---
 
-## 💬 Nachrichten
+## 1. Erste Schritte & Profil
 
-### Nachrichten schreiben
-Im Chat kannst du ganz einfach Textnachrichten verschicken. Sie werden in Echtzeit sicher über das Netzwerk übertragen.
+### Profil anpassen
+- Tippe oben rechts auf das **Drei-Punkte-Menü** ➔ **Einstellungen** ➔ **Profil bearbeiten** (oder tippe direkt auf dein Profilbild oben links).
+- Hier kannst du deinen **Anzeigenamen**, deine **Info (Status)** und dein **Profilbild** ändern.
 
----
-
-## 📞 Telefon & Videoanrufe
-
-Das Highlight von ChatConnect: Du bist mit deinen Kontakten jederzeit in bester Qualität verbunden!
-
-* **Anrufe starten:** Wenn du dich in einem Chat befindest, tippe oben rechts auf das **Telefon-Symbol** (für Audio-Anrufe) oder das **Kamera-Symbol** (für Videoanrufe).
-* **Immer erreichbar:** Dein Partner wird sofort angerufen – **selbst wenn sein Bildschirm gesperrt ist und die App komplett geschlossen ist!** Dank unserer modernen Offline-Push-Benachrichtigungen klingelt es immer zuverlässig, genau wie bei einem normalen Telefonanruf.
-* **Neuer Anruf (Übersicht):** Über den Tab "Anrufe" auf der Startseite hast du eine Übersicht deiner bisherigen Anrufe und kannst über das Telefon-Plus-Symbol unten rechts direkt jemanden aus deinen Kontakten anrufen.
+### Neuen Chat starten
+- Tippe auf das runde, grüne/blaue **Stift-Symbol** unten rechts auf der Hauptseite.
+- Wähle den gewünschten Kontakt aus der Liste aus, um den Chat sofort zu öffnen.
 
 ---
 
-## 📸 Storys (Status Updates)
+## 2. Nachrichten schreiben & Emojis
 
-Teile Momente deines Tages mit all deinen Kontakten! Die Bilder verschwinden automatisch nach genau 24 Stunden.
-
-### 1. Storys ansehen
-* Wische auf der Startseite zum Reiter **Storys**.
-* Hier siehst du unter "Aktuelle Updates" die Storys all deiner Freunde, die in den letzten 24 Stunden etwas hochgeladen haben.
-* **Alle abspielen:** Tippe oben rechts auf das **Slideshow-Symbol** (Play-Button), um alle Bilder von all deinen Freunden (und deine eigenen) wie einen Film nahtlos hintereinander anzusehen.
-
-### 2. Eigene Story erstellen
-* Tippe im Storys-Reiter ganz oben auf **Meine Story** (oder das kleine blaue Plus an deinem Profilbild).
-* Wähle ein Bild aus deiner Galerie aus.
-* Füge optional einen kurzen Text (Caption) hinzu und teile die Story! 
-
-### 3. Eigene Storys verwalten
-* Wenn du auf den Text "Meine Story" tippst, öffnet sich eine Liste all deiner Bilder, die aktuell online sind.
-* **Info & Aufrufe:** Du siehst direkt in der Liste, wie viele Leute deine Story gesehen haben. Über das Drei-Punkte-Menü bei einem Bild kannst du auf **Info** tippen, um das genaue Erstellungs- und Ablaufdatum zu sehen.
-* **Story löschen:** Falls dir ein Bild doch nicht gefällt, tippe im Drei-Punkte-Menü einfach auf **Löschen**. Das Bild wird sofort komplett vom Server gelöscht.
+- Tippe deine Nachricht in das Textfeld am unteren Rand ein und tippe auf den **Senden-Pfeil**.
+- Über das **Smiley-Symbol** links neben dem Textfeld kannst du Emojis einfügen.
+- Eintreffende Nachrichten erscheinen dank Live-Aktualisierung sofort in Echtzeit mit einem angenehmen Hinweiston.
 
 ---
 
-## 🗂️ Chats organisieren
+## 3. Sprachnachrichten aufnehmen & senden 🎤
 
-Ist deine Hauptseite zu voll? Kein Problem! 
+### In der App (Tablet/Handy):
+1. **Aufnehmen:** Drücke und halte das **Mikrofon-Symbol** unten rechts gedrückt, während du sprichst.
+2. **Senden:** Lasse das Mikrofon los, sobald du fertig gesprochen hast – die Sprachnachricht wird sofort verschickt.
 
-### 📦 Chats archivieren
-* Wische einen Chat in der Liste einfach **nach rechts**. 
-* Der Hintergrund wird **blau** (mit einem Archiv-Symbol) und der Chat verschwindet aufgeräumt von der Hauptseite.
+### In der WebApp (Laptop/Browser):
+1. **Aufnehmen:** Klicke einmal auf das **Mikrofon-Symbol** neben dem Textfeld.
+2. **Aufnahmeleiste:** Eine rote Leiste mit Timer zeigt dir die laufende Aufnahme an.
+3. **Senden:** Klicke auf den grünen Pfeil zum Senden (oder auf den roten Papierkorb zum Abbrechen).
 
-### 🗑️ Chats löschen
-* Wische einen Chat in der Liste **nach links**.
-* Der Hintergrund wird **rot** (mit einem Mülleimer-Symbol) und der Chat wird sofort gelöscht.
-
-### 📥 Archivierte Chats zurückholen
-* Öffne oben rechts das **Drei-Punkte-Menü** und tippe auf **Archivierte Chats**.
-* Hier findest du alle Chats, die du archiviert hast. 
-* Wische hier auf einem Chat wieder **nach rechts**, um ihn zu entpacken und zurück auf die Hauptseite zu legen.
+### Abspielen:
+- Jede Sprachnachricht enthält einen Player. Tippe einfach auf **Play (▶)** zum Anhören.
 
 ---
 
-## 🎨 App personalisieren (Dark Mode & Farben)
+## 4. Bilder aufnehmen, zuschneiden & teilen 📷
 
-ChatConnect passt sich ganz deinem Geschmack an:
-
-1. **Dark Mode:** Die App unterstützt vollständig einen Dunkelmodus. Er wird je nach den Einstellungen deines Geräts automatisch aktiviert.
-2. **Akzentfarben:** Tippe auf der Hauptseite unten auf **Farbe einstellen** (Paletten-Symbol). Wähle aus 8 verschiedenen Farben deine Lieblingsfarbe aus. Knöpfe, Ränder und Menüs erstrahlen sofort in dieser neuen Farbe und das Design wird gespeichert.
+1. Tippe auf das **Büroklammer- oder Foto-Symbol** neben dem Textfeld.
+2. Wähle ein Foto aus deiner Galerie oder nimm ein neues Foto mit der Kamera auf.
+3. Im Zuschneide-Fenster kannst du das Bild drehen, zoomen und den Ausschnitt festlegen.
+4. Tippe auf **„Bild senden“**, um das Foto optimal formatiert zu übertragen.
 
 ---
 
-Viel Spaß mit ChatConnect!
+## 5. Nachrichten für alle löschen 🗑️
+
+Jeder Teilnehmer kann Nachrichten sauber aus dem Chat entfernen:
+
+### Auf dem Tablet/Handy (Android-App):
+1. Drücke **lange mit dem Finger** auf die gewünschte Nachricht (Text, Bild oder Sprachnachricht).
+2. Es öffnet sich unten ein Menü.
+3. Tippe auf den roten Eintrag **„Löschen“**. Die Nachricht wird sofort für alle gelöscht.
+
+### Auf dem Laptop (WebApp im Browser):
+1. Oben rechts an jeder Sprechblase siehst du ein kleines **Mülleimer-Symbol**.
+2. Klicke darauf und bestätige die Abfrage – die Nachricht verschwindet unmittelbar.
+
+---
+
+## 6. Sprach- & Videoanrufe 📞 📹
+
+1. Öffne den Chat mit deinem Kontakt.
+2. Tippe oben rechts auf:
+   - **Telefonhörer (📞)** für einen Sprachanruf.
+   - **Videokamera (📹)** für einen Videoanruf mit Live-Bild.
+3. Das Telefon klingelt beim Partner auch bei gesperrtem Bildschirm zuverlässig.
+
+---
+
+## 7. Chat-Hintergrundbild (Wallpaper) 🎨
+
+1. Öffne das Drei-Punkte-Menü (oder die Einstellungen) ➔ **„Chat-Hintergrundbild“**.
+2. Wähle eine der Vorlagen (*Neon Waves*, *Cyber Mesh*) oder lade ein eigenes Bild hoch.
+
+---
+
+## 8. Storys (Status-Updates für 24 Stunden) 📸
+
+- **Story ansehen:** Wechsle zum Reiter **„Storys“**. Tippe auf das Bild eines Kontakts, um seine Tages-Highlights zu sehen.
+- **Eigene Story teilen:** Tippe auf **„Meine Story“** (oder das Plus an deinem Bild), wähle ein Foto aus und teile es.
+
+---
+
+## 9. Chats organisieren & archivieren 🗂️
+
+- **Archivieren:** Wische einen Chat in der Liste nach **rechts** (blauer Hintergrund).
+- **Archiv öffnen:** Drei-Punkte-Menü ➔ **„Archivierte Chats“**.
+- **Chat löschen:** Wische einen Chat nach **links** (roter Hintergrund).
+
+---
+
+Viel Freude mit ChatConnect!
 ''';

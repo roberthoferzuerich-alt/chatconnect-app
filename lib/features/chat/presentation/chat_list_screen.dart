@@ -80,6 +80,8 @@ class ChatListScreen extends ConsumerWidget {
                 context.push('/settings_notifications');
               } else if (value == 'archived') {
                 context.push('/archived_chats');
+              } else if (value == 'user_guide') {
+                context.push('/user_guide');
               } else if (value == 'settings') {
                 context.push('/settings');
               }
@@ -108,6 +110,10 @@ class ChatListScreen extends ConsumerWidget {
               const PopupMenuItem(
                 value: 'archived',
                 child: Text('Archivierte Chats'),
+              ),
+              const PopupMenuItem(
+                value: 'user_guide',
+                child: Text('Benutzeranleitung'),
               ),
               const PopupMenuItem(
                 value: 'settings',
