@@ -240,6 +240,80 @@ class ChatsSettingsScreen extends ConsumerWidget {
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: Text(
+              'Chat-Schriftgröße',
+              style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+            ),
+          ),
+          ListTile(
+            title: const Text('Textgröße in Chats'),
+            subtitle: Text(
+              '${settings.chatFontSize.toInt()} pt '
+              '(${settings.chatFontSize <= 13 ? "Klein" : settings.chatFontSize <= 16 ? "Standard" : settings.chatFontSize <= 20 ? "Groß" : "Sehr groß"})',
+            ),
+            trailing: IconButton(
+              tooltip: 'Standard (16 pt) wiederherstellen',
+              icon: const Icon(Icons.refresh),
+              onPressed: () => notifier.updateDoubleSetting('chatFontSize', 16.0),
+            ),
+          ),
+          // Live Preview
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.3)),
+              ),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? const Color(0xFF005C4B)
+                        : const Color(0xFFD9FDD3),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    'Hallo! Hier siehst du die Chat-Schriftgröße in Echtzeit.',
+                    style: TextStyle(
+                      fontSize: settings.chatFontSize,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white
+                          : Colors.black87,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Slider(
+            value: settings.chatFontSize,
+            min: 12.0,
+            max: 26.0,
+            divisions: 7,
+            label: '${settings.chatFontSize.toInt()} pt',
+            onChanged: (val) =>
+                notifier.updateDoubleSetting('chatFontSize', val),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('A (12 pt)', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                Text('Standard (16 pt)', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                Text('A (26 pt)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Divider(),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Text(
               'Medien & Upload',
               style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
             ),

@@ -595,8 +595,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                           ),
                                           child: Text(
                                             msg.content,
-                                            style: const TextStyle(
-                                              fontSize: 16,
+                                            style: TextStyle(
+                                              fontSize: chatsSettings.chatFontSize,
                                               color: Colors.black87,
                                             ),
                                           ),

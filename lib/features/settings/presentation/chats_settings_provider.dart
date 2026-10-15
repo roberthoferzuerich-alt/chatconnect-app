@@ -12,6 +12,7 @@ class ChatsSettingsState {
   final bool sendWithEnter;
   final double imageUploadSize;
   final double thumbnailSize;
+  final double chatFontSize;
   final String? wallpaperPath;
 
   ChatsSettingsState({
@@ -22,6 +23,7 @@ class ChatsSettingsState {
     this.sendWithEnter = false,
     this.imageUploadSize = 1024.0,
     this.thumbnailSize = 100.0,
+    this.chatFontSize = 16.0,
     this.wallpaperPath,
   });
 
@@ -33,6 +35,7 @@ class ChatsSettingsState {
     bool? sendWithEnter,
     double? imageUploadSize,
     double? thumbnailSize,
+    double? chatFontSize,
     String? wallpaperPath,
     bool clearWallpaper = false,
   }) {
@@ -45,6 +48,7 @@ class ChatsSettingsState {
       sendWithEnter: sendWithEnter ?? this.sendWithEnter,
       imageUploadSize: imageUploadSize ?? this.imageUploadSize,
       thumbnailSize: thumbnailSize ?? this.thumbnailSize,
+      chatFontSize: chatFontSize ?? this.chatFontSize,
       wallpaperPath: clearWallpaper ? null : (wallpaperPath ?? this.wallpaperPath),
     );
   }
@@ -67,6 +71,7 @@ class ChatsSettingsNotifier extends Notifier<ChatsSettingsState> {
       sendWithEnter: prefs.getBool('sendWithEnter') ?? false,
       imageUploadSize: prefs.getDouble('imageUploadSize') ?? 1024.0,
       thumbnailSize: prefs.getDouble('thumbnailSize') ?? 100.0,
+      chatFontSize: prefs.getDouble('chatFontSize') ?? 16.0,
       wallpaperPath: prefs.getString('chat_wallpaper_path'),
     );
   }
@@ -131,6 +136,8 @@ class ChatsSettingsNotifier extends Notifier<ChatsSettingsState> {
       state = state.copyWith(imageUploadSize: value);
     } else if (key == 'thumbnailSize') {
       state = state.copyWith(thumbnailSize: value);
+    } else if (key == 'chatFontSize') {
+      state = state.copyWith(chatFontSize: value);
     }
   }
 }
