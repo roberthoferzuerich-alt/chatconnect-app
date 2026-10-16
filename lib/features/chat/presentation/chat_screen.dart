@@ -20,6 +20,8 @@ import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import '../../auth/presentation/auth_provider.dart';
 import '../../settings/presentation/chats_settings_provider.dart';
+import '../../settings/presentation/widgets/chat_font_size_dialog.dart';
+import 'package:go_router/go_router.dart';
 import 'chat_providers.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
@@ -460,6 +462,31 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 buttonSize: const Size(48, 48),
               ),
             ],
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                if (value == 'font_size') {
+                  showChatFontSizeDialog(context);
+                } else if (value == 'chat_settings') {
+                  context.push('/settings_chats');
+                } else if (value == 'user_guide') {
+                  context.push('/user_guide');
+                }
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'font_size',
+                  child: Text('Chat-Schriftgröße'),
+                ),
+                const PopupMenuItem(
+                  value: 'chat_settings',
+                  child: Text('Chat-Einstellungen'),
+                ),
+                const PopupMenuItem(
+                  value: 'user_guide',
+                  child: Text('Benutzeranleitung'),
+                ),
+              ],
+            ),
           ],
         ),
         body: Container(

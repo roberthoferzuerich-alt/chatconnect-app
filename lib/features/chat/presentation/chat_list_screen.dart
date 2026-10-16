@@ -12,6 +12,7 @@ import '../../story/presentation/story_providers.dart';
 import '../../story/domain/story_model.dart';
 import 'package:image_picker/image_picker.dart';
 import 'widgets/connection_indicator.dart';
+import '../../settings/presentation/widgets/chat_font_size_dialog.dart';
 
 class UnreadFilterNotifier extends Notifier<bool> {
   @override
@@ -80,6 +81,8 @@ class ChatListScreen extends ConsumerWidget {
                 context.push('/settings_notifications');
               } else if (value == 'archived') {
                 context.push('/archived_chats');
+              } else if (value == 'font_size') {
+                showChatFontSizeDialog(context);
               } else if (value == 'user_guide') {
                 context.push('/user_guide');
               } else if (value == 'settings') {
@@ -110,6 +113,10 @@ class ChatListScreen extends ConsumerWidget {
               const PopupMenuItem(
                 value: 'archived',
                 child: Text('Archivierte Chats'),
+              ),
+              const PopupMenuItem(
+                value: 'font_size',
+                child: Text('Chat-Schriftgröße'),
               ),
               const PopupMenuItem(
                 value: 'user_guide',
