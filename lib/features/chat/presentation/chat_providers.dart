@@ -163,6 +163,8 @@ class MessagesNotifier extends StateNotifier<AsyncValue<List<Message>>> {
     String? content, {
     String? imagePath,
     String? audioPath,
+    String? documentPath,
+    String? documentName,
   }) async {
     try {
       final newMsg = await _repo.sendMessage(
@@ -170,6 +172,8 @@ class MessagesNotifier extends StateNotifier<AsyncValue<List<Message>>> {
         content,
         imagePath: imagePath,
         audioPath: audioPath,
+        documentPath: documentPath,
+        documentName: documentName,
       );
       if (state.hasValue) {
         state = AsyncValue.data([...state.value!, newMsg]);

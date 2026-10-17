@@ -70,13 +70,21 @@ class ChatRepository {
     String? content, {
     String? imagePath,
     String? audioPath,
+    String? documentPath,
+    String? documentName,
   }) async {
     FormData? formData;
-    if (imagePath != null || audioPath != null) {
+    if (imagePath != null || audioPath != null || documentPath != null) {
       formData = FormData.fromMap({
         if (content != null && content.isNotEmpty) 'content': content,
         if (imagePath != null) 'image': await MultipartFile.fromFile(imagePath),
         if (audioPath != null) 'audio': await MultipartFile.fromFile(audioPath),
+        if (documentPath != null)
+          'document': await MultipartFile.fromFile(
+            documentPath,
+            filename: documentName,
+          ),
+        if (documentName != null) 'file_name': documentName,
       });
     }
 

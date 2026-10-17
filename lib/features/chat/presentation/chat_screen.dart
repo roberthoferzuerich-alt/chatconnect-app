@@ -21,6 +21,8 @@ import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import '../../auth/presentation/auth_provider.dart';
 import '../../settings/presentation/chats_settings_provider.dart';
 import '../../settings/presentation/widgets/chat_font_size_dialog.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:go_router/go_router.dart';
 import 'chat_providers.dart';
 
@@ -42,6 +44,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   String? _recordFilePath;
   bool _emojiShowing = false;
   String? _attachedImagePath;
+  String? _attachedDocumentPath;
+  String? _attachedDocumentName;
 
   @override
   void initState() {
@@ -113,19 +117,28 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Future<void> _send() async {
     final text = _msgCtrl.text.trim();
     final imageToSend = _attachedImagePath;
+    final docToSend = _attachedDocumentPath;
+    final docName = _attachedDocumentName;
 
-    if (text.isEmpty && imageToSend == null) return;
+    if (text.isEmpty && imageToSend == null && docToSend == null) return;
 
     _msgCtrl.clear();
     setState(() {
-      _isUploading = imageToSend != null;
+      _isUploading = imageToSend != null || docToSend != null;
       _attachedImagePath = null;
+      _attachedDocumentPath = null;
+      _attachedDocumentName = null;
     });
 
     try {
       await ref
           .read(messagesProvider(widget.conversationId).notifier)
-          .sendMessage(text, imagePath: imageToSend);
+          .sendMessage(
+            text,
+            imagePath: imageToSend,
+            documentPath: docToSend,
+            documentName: docName,
+          );
       ref.invalidate(conversationsProvider);
 
       Future.delayed(const Duration(milliseconds: 100), () {
@@ -166,7 +179,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         child: Wrap(
           children: [
             ListTile(
-              leading: const Icon(Icons.camera_alt),
+              leading: const Icon(Icons.camera_alt, color: Colors.teal),
               title: const Text('Kamera'),
               onTap: () {
                 Navigator.pop(context);
@@ -174,17 +187,99 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Galerie'),
+              leading: const Icon(Icons.photo_library, color: Colors.teal),
+              title: const Text('Galerie (Foto)'),
               onTap: () {
                 Navigator.pop(context);
                 _pickImage(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: const Icon(
+                Icons.picture_as_pdf_outlined,
+                color: Colors.redAccent,
+              ),
+              title: const Text('Dokument / PDF'),
+              subtitle: const Text('PDF, Word, Excel, Text, ZIP (max. 20 MB)'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickDocument();
               },
             ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _pickDocument() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: [
+          'pdf',
+          'doc',
+          'docx',
+          'xls',
+          'xlsx',
+          'txt',
+          'csv',
+          'zip',
+          'ppt',
+          'pptx',
+        ],
+      );
+      if (result != null && result.files.single.path != null) {
+        final file = result.files.single;
+        if (file.size > 20 * 1024 * 1024) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Die Datei ist zu groß (maximal 20 MB erlaubt).'),
+              ),
+            );
+          }
+          return;
+        }
+        setState(() {
+          _attachedDocumentPath = file.path;
+          _attachedDocumentName = file.name;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error picking document: $e');
+    }
+  }
+
+  Future<void> _openDocument(String fileUrl, String? fileName) async {
+    final fullUrl = fileUrl.startsWith('http')
+        ? fileUrl
+        : 'https://rhz.internet-box.ch:8443/storage/${fileUrl.replaceFirst(RegExp(r"^/?storage/"), "").replaceFirst(RegExp(r"^/"), "")}';
+    final displayFileName =
+        (fileName != null && fileName.isNotEmpty)
+            ? fileName
+            : fullUrl.split('/').last;
+
+    try {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lade „$displayFileName“ herunter...'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+      final tempDir = await getTemporaryDirectory();
+      final savePath = '${tempDir.path}/$displayFileName';
+      await import_dio.Dio().download(fullUrl, savePath);
+      await Share.shareXFiles([XFile(savePath)], text: displayFileName);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Fehler beim Öffnen des Dokuments: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _pickImage(ImageSource source) async {
@@ -554,6 +649,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                   : CrossAxisAlignment.start,
                               children: [
                                 if (msg.imageUrl != null ||
+                                    msg.fileUrl != null ||
                                     msg.content.isNotEmpty ||
                                     msg.audioUrl != null)
                                   Wrap(
@@ -606,12 +702,117 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                             ),
                                           ),
                                         ),
+                                      if (msg.fileUrl != null)
+                                        InkWell(
+                                          onTap: () => _openDocument(
+                                            msg.fileUrl!,
+                                            msg.fileName,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                          child: Container(
+                                            constraints: const BoxConstraints(
+                                              maxWidth: 260,
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                              vertical: 8,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: isMe
+                                                  ? Colors.teal.shade200
+                                                        .withValues(alpha: 0.45)
+                                                  : Colors.white.withValues(
+                                                      alpha: 0.85,
+                                                    ),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              border: Border.all(
+                                                color: Colors.black12,
+                                              ),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Container(
+                                                  padding:
+                                                      const EdgeInsets.all(8),
+                                                  decoration: BoxDecoration(
+                                                    color: (msg.fileName ?? '')
+                                                            .toLowerCase()
+                                                            .endsWith('.pdf')
+                                                        ? Colors.red.shade100
+                                                        : Colors.teal.shade100,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          8,
+                                                        ),
+                                                  ),
+                                                  child: Icon(
+                                                    (msg.fileName ?? '')
+                                                            .toLowerCase()
+                                                            .endsWith('.pdf')
+                                                        ? Icons.picture_as_pdf
+                                                        : Icons.description,
+                                                    color: (msg.fileName ?? '')
+                                                            .toLowerCase()
+                                                            .endsWith('.pdf')
+                                                        ? Colors.red.shade700
+                                                        : Colors.teal.shade700,
+                                                    size: 22,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 10),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      Text(
+                                                        msg.fileName ??
+                                                            msg.fileUrl!
+                                                                .split('/')
+                                                                .last,
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        style: const TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          fontSize: 13,
+                                                          color: Colors.black87,
+                                                        ),
+                                                      ),
+                                                      const Text(
+                                                        'Tippen zum Öffnen',
+                                                        style: TextStyle(
+                                                          fontSize: 11,
+                                                          color: Colors.black54,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 6),
+                                                const Icon(
+                                                  Icons.open_in_new,
+                                                  size: 16,
+                                                  color: Colors.black54,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
                                       if (msg.audioUrl != null)
                                         AudioMessagePlayer(
                                           audioUrl: msg.audioUrl!,
                                           isMe: isMe,
-                                        )
-                                      else if (msg.content.isNotEmpty)
+                                        ),
+                                      if (msg.content.isNotEmpty)
                                         Container(
                                           constraints: BoxConstraints(
                                             maxWidth:
@@ -627,11 +828,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                               color: Colors.black87,
                                             ),
                                           ),
-                                        )
-                                      else
-                                        const Text(
-                                          "Audio is null! (Debug)",
-                                          style: TextStyle(color: Colors.red),
                                         ),
                                     ],
                                   ),
@@ -755,6 +951,56 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         ],
                       ),
                     ),
+                  if (_attachedDocumentPath != null)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0,
+                        vertical: 6.0,
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.teal.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.teal.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.picture_as_pdf,
+                              color: Colors.redAccent,
+                              size: 22,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                _attachedDocumentName ?? 'Dokument',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close, size: 18),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              onPressed: () => setState(() {
+                                _attachedDocumentPath = null;
+                                _attachedDocumentName = null;
+                              }),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Row(
@@ -818,7 +1064,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           builder: (context, value, child) {
                             final hasText =
                                 value.text.trim().isNotEmpty ||
-                                _attachedImagePath != null;
+                                _attachedImagePath != null ||
+                                _attachedDocumentPath != null;
                             if (hasText) {
                               return CircleAvatar(
                                 backgroundColor: Colors.teal,

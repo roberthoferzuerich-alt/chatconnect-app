@@ -229,7 +229,18 @@ class ChatListScreen extends ConsumerWidget {
                           style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
                         subtitle: Text(
-                          convo.lastMessage?.content ?? 'Keine Nachrichten',
+                          convo.lastMessage == null
+                              ? 'Keine Nachrichten'
+                              : (convo.lastMessage!.content.isNotEmpty
+                                    ? convo.lastMessage!.content
+                                    : (convo.lastMessage!.fileUrl != null
+                                          ? '📄 ${convo.lastMessage!.fileName ?? "Dokument"}'
+                                          : (convo.lastMessage!.audioUrl != null
+                                                ? '🎤 Sprachnachricht'
+                                                : (convo.lastMessage!.imageUrl !=
+                                                          null
+                                                      ? '📷 Foto'
+                                                      : 'Keine Nachrichten')))),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
