@@ -22,6 +22,7 @@ import '../../auth/presentation/auth_provider.dart';
 import '../../settings/presentation/chats_settings_provider.dart';
 import '../../settings/presentation/widgets/chat_font_size_dialog.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:go_router/go_router.dart';
 import 'chat_providers.dart';
@@ -199,8 +200,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 Icons.picture_as_pdf_outlined,
                 color: Colors.redAccent,
               ),
-              title: const Text('Dokument / PDF'),
-              subtitle: const Text('PDF, Word, Excel, Text, ZIP (max. 20 MB)'),
+              title: const Text('Dokument / PDF / Markdown'),
+              subtitle: const Text(
+                'PDF, Markdown (.md), Word, Excel, Text, ZIP',
+              ),
               onTap: () {
                 Navigator.pop(context);
                 _pickDocument();
@@ -218,6 +221,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         type: FileType.custom,
         allowedExtensions: [
           'pdf',
+          'md',
+          'markdown',
           'doc',
           'docx',
           'xls',
@@ -259,12 +264,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         (fileName != null && fileName.isNotEmpty)
             ? fileName
             : fullUrl.split('/').last;
+    final lowerName = displayFileName.toLowerCase();
+    final isMarkdown =
+        lowerName.endsWith('.md') || lowerName.endsWith('.markdown');
 
     try {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lade „$displayFileName“ herunter...'),
+            content: Text(
+              isMarkdown
+                  ? 'Öffne „$displayFileName“ im Markdown-Viewer...'
+                  : 'Lade „$displayFileName“ herunter...',
+            ),
             duration: const Duration(seconds: 2),
           ),
         );
@@ -272,6 +284,37 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       final tempDir = await getTemporaryDirectory();
       final savePath = '${tempDir.path}/$displayFileName';
       await import_dio.Dio().download(fullUrl, savePath);
+
+      if (isMarkdown) {
+        final mdContent = await File(savePath).readAsString();
+        if (!mounted) return;
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (ctx) => Scaffold(
+              appBar: AppBar(
+                title: Text(displayFileName),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.share),
+                    tooltip: 'Datei teilen / speichern',
+                    onPressed: () {
+                      Share.shareXFiles([XFile(savePath)], text: displayFileName);
+                    },
+                  ),
+                ],
+              ),
+              body: Markdown(
+                data: mdContent,
+                selectable: true,
+                padding: const EdgeInsets.all(16),
+              ),
+            ),
+          ),
+        );
+        return;
+      }
+
       await Share.shareXFiles([XFile(savePath)], text: displayFileName);
     } catch (e) {
       if (mounted) {
@@ -743,6 +786,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                                             .toLowerCase()
                                                             .endsWith('.pdf')
                                                         ? Colors.red.shade100
+                                                        : ((msg.fileName ?? '')
+                                                                    .toLowerCase()
+                                                                    .endsWith(
+                                                                      '.md',
+                                                                    ) ||
+                                                                (msg.fileName ??
+                                                                        '')
+                                                                    .toLowerCase()
+                                                                    .endsWith(
+                                                                      '.markdown',
+                                                                    ))
+                                                        ? Colors.indigo.shade100
                                                         : Colors.teal.shade100,
                                                     borderRadius:
                                                         BorderRadius.circular(
@@ -754,11 +809,35 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                                             .toLowerCase()
                                                             .endsWith('.pdf')
                                                         ? Icons.picture_as_pdf
+                                                        : ((msg.fileName ?? '')
+                                                                    .toLowerCase()
+                                                                    .endsWith(
+                                                                      '.md',
+                                                                    ) ||
+                                                                (msg.fileName ??
+                                                                        '')
+                                                                    .toLowerCase()
+                                                                    .endsWith(
+                                                                      '.markdown',
+                                                                    ))
+                                                        ? Icons.article_outlined
                                                         : Icons.description,
                                                     color: (msg.fileName ?? '')
                                                             .toLowerCase()
                                                             .endsWith('.pdf')
                                                         ? Colors.red.shade700
+                                                        : ((msg.fileName ?? '')
+                                                                    .toLowerCase()
+                                                                    .endsWith(
+                                                                      '.md',
+                                                                    ) ||
+                                                                (msg.fileName ??
+                                                                        '')
+                                                                    .toLowerCase()
+                                                                    .endsWith(
+                                                                      '.markdown',
+                                                                    ))
+                                                        ? Colors.indigo.shade700
                                                         : Colors.teal.shade700,
                                                     size: 22,
                                                   ),
@@ -787,9 +866,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                                           color: Colors.black87,
                                                         ),
                                                       ),
-                                                      const Text(
-                                                        'Tippen zum Öffnen',
-                                                        style: TextStyle(
+                                                      Text(
+                                                        ((msg.fileName ?? '')
+                                                                    .toLowerCase()
+                                                                    .endsWith(
+                                                                      '.md',
+                                                                    ) ||
+                                                                (msg.fileName ??
+                                                                        '')
+                                                                    .toLowerCase()
+                                                                    .endsWith(
+                                                                      '.markdown',
+                                                                    ))
+                                                            ? 'Im Markdown-Viewer öffnen'
+                                                            : 'Tippen zum Öffnen',
+                                                        style: const TextStyle(
                                                           fontSize: 11,
                                                           color: Colors.black54,
                                                         ),
