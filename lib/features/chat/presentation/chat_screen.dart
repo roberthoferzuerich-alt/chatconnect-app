@@ -1,4 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
+import 'dart:typed_data';
 import 'package:app/features/chat/data/chat_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -200,9 +203,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 Icons.picture_as_pdf_outlined,
                 color: Colors.redAccent,
               ),
-              title: const Text('Dokument / PDF / Markdown'),
+              title: const Text('Dokument / PDF / Markdown / 3D-STL'),
               subtitle: const Text(
-                'PDF, Markdown (.md), Word, Excel, Text, ZIP',
+                'PDF, Markdown (.md), 3D-Modell (.stl/.ctl), Office, ZIP',
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -223,6 +226,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           'pdf',
           'md',
           'markdown',
+          'stl',
+          'ctl',
           'doc',
           'docx',
           'xls',
@@ -236,11 +241,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       );
       if (result != null && result.files.single.path != null) {
         final file = result.files.single;
-        if (file.size > 20 * 1024 * 1024) {
+        if (file.size > 50 * 1024 * 1024) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Die Datei ist zu groß (maximal 20 MB erlaubt).'),
+                content: Text('Die Datei ist zu groß (maximal 50 MB erlaubt).'),
               ),
             );
           }
@@ -267,6 +272,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final lowerName = displayFileName.toLowerCase();
     final isMarkdown =
         lowerName.endsWith('.md') || lowerName.endsWith('.markdown');
+    final isStl = lowerName.endsWith('.stl') || lowerName.endsWith('.ctl');
 
     try {
       if (mounted) {
@@ -275,7 +281,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             content: Text(
               isMarkdown
                   ? 'Öffne „$displayFileName“ im Markdown-Viewer...'
-                  : 'Lade „$displayFileName“ herunter...',
+                  : (isStl
+                        ? 'Öffne „$displayFileName“ im 3D-STL-Browser...'
+                        : 'Lade „$displayFileName“ herunter...'),
             ),
             duration: const Duration(seconds: 2),
           ),
@@ -309,6 +317,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 selectable: true,
                 padding: const EdgeInsets.all(16),
               ),
+            ),
+          ),
+        );
+        return;
+      }
+
+      if (isStl) {
+        final bytes = await File(savePath).readAsBytes();
+        if (!mounted) return;
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (ctx) => _StlViewerScreen(
+              fileName: displayFileName,
+              filePath: savePath,
+              bytes: bytes,
             ),
           ),
         );
@@ -502,7 +526,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         final otherUser = conversation.users
             .where((u) => u.id != currentUser?.id)
             .firstOrNull;
-        chatTitle = otherUser?.name ?? 'Chat';
+        chatTitle = otherUser != null
+            ? otherUser.name
+            : '${currentUser?.name ?? "Ich"} (Eigene Dateien)';
       }
     }
 
@@ -548,11 +574,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             children: [
               AppAvatar(
                 avatarUrl: (conversation != null && !conversation.isGroup)
-                    ? otherUser?.fullAvatarUrl
+                    ? (otherUser?.fullAvatarUrl ?? currentUser?.fullAvatarUrl)
                     : null,
                 name: (conversation?.isGroup ?? false)
                     ? (chatTitle)
-                    : (otherUser?.name ?? chatTitle),
+                    : (otherUser?.name ?? currentUser?.name ?? chatTitle),
                 isGroup: conversation?.isGroup ?? false,
                 radius: 18,
               ),
@@ -798,6 +824,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                                                       '.markdown',
                                                                     ))
                                                         ? Colors.indigo.shade100
+                                                        : ((msg.fileName ?? '')
+                                                                    .toLowerCase()
+                                                                    .endsWith(
+                                                                      '.stl',
+                                                                    ) ||
+                                                                (msg.fileName ??
+                                                                        '')
+                                                                    .toLowerCase()
+                                                                    .endsWith(
+                                                                      '.ctl',
+                                                                    ))
+                                                        ? Colors.lightBlue.shade100
                                                         : Colors.teal.shade100,
                                                     borderRadius:
                                                         BorderRadius.circular(
@@ -821,6 +859,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                                                       '.markdown',
                                                                     ))
                                                         ? Icons.article_outlined
+                                                        : ((msg.fileName ?? '')
+                                                                    .toLowerCase()
+                                                                    .endsWith(
+                                                                      '.stl',
+                                                                    ) ||
+                                                                (msg.fileName ??
+                                                                        '')
+                                                                    .toLowerCase()
+                                                                    .endsWith(
+                                                                      '.ctl',
+                                                                    ))
+                                                        ? Icons.view_in_ar
                                                         : Icons.description,
                                                     color: (msg.fileName ?? '')
                                                             .toLowerCase()
@@ -838,6 +888,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                                                       '.markdown',
                                                                     ))
                                                         ? Colors.indigo.shade700
+                                                        : ((msg.fileName ?? '')
+                                                                    .toLowerCase()
+                                                                    .endsWith(
+                                                                      '.stl',
+                                                                    ) ||
+                                                                (msg.fileName ??
+                                                                        '')
+                                                                    .toLowerCase()
+                                                                    .endsWith(
+                                                                      '.ctl',
+                                                                    ))
+                                                        ? Colors.lightBlue.shade800
                                                         : Colors.teal.shade700,
                                                     size: 22,
                                                   ),
@@ -879,6 +941,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                                                       '.markdown',
                                                                     ))
                                                             ? 'Im Markdown-Viewer öffnen'
+                                                            : ((msg.fileName ??
+                                                                            '')
+                                                                        .toLowerCase()
+                                                                        .endsWith(
+                                                                          '.stl',
+                                                                        ) ||
+                                                                    (msg.fileName ??
+                                                                            '')
+                                                                        .toLowerCase()
+                                                                        .endsWith(
+                                                                          '.ctl',
+                                                                        ))
+                                                            ? 'Im 3D-STL-Browser öffnen'
                                                             : 'Tippen zum Öffnen',
                                                         style: const TextStyle(
                                                           fontSize: 11,
@@ -1208,3 +1283,511 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   );
 }
 }
+
+class _StlTriangle {
+  final double v1x, v1y, v1z;
+  final double v2x, v2y, v2z;
+  final double v3x, v3y, v3z;
+  final double nx, ny, nz;
+
+  const _StlTriangle(
+    this.v1x,
+    this.v1y,
+    this.v1z,
+    this.v2x,
+    this.v2y,
+    this.v2z,
+    this.v3x,
+    this.v3y,
+    this.v3z,
+    this.nx,
+    this.ny,
+    this.nz,
+  );
+}
+
+class _StlViewerScreen extends StatefulWidget {
+  final String fileName;
+  final String filePath;
+  final Uint8List bytes;
+
+  const _StlViewerScreen({
+    required this.fileName,
+    required this.filePath,
+    required this.bytes,
+  });
+
+  @override
+  State<_StlViewerScreen> createState() => _StlViewerScreenState();
+}
+
+class _StlViewerScreenState extends State<_StlViewerScreen> {
+  List<_StlTriangle> _triangles = [];
+  double _rotX = -0.55;
+  double _rotY = 0.65;
+  double _zoom = 1.0;
+  Offset _pan = Offset.zero;
+  double _baseZoom = 1.0;
+  Offset _lastFocalPoint = Offset.zero;
+  bool _wireframe = false;
+  bool _showGrid = true;
+  Color _modelColor = const Color(0xFF38BDF8);
+  String _stats = 'Analysiere 3D-Modell...';
+  double _modelRadius = 50.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _parseStl();
+  }
+
+  void _parseStl() {
+    final data = widget.bytes;
+    final rawTriangles = <_StlTriangle>[];
+    bool isBinary = false;
+
+    if (data.length >= 84) {
+      final bd = ByteData.sublistView(data);
+      final count = bd.getUint32(80, Endian.little);
+      final expected = 84 + count * 50;
+      if (expected == data.length) {
+        isBinary = true;
+      } else {
+        final header = ascii.decode(
+          data.sublist(0, math.min(80, data.length)),
+          allowInvalid: true,
+        );
+        if (!header.trimLeft().toLowerCase().startsWith('solid') &&
+            count > 0 &&
+            expected <= data.length + 512) {
+          isBinary = true;
+        }
+      }
+
+      if (isBinary) {
+        int offset = 84;
+        for (int i = 0; i < count; i++) {
+          if (offset + 50 > data.length) break;
+          final nx = bd.getFloat32(offset, Endian.little);
+          final ny = bd.getFloat32(offset + 4, Endian.little);
+          final nz = bd.getFloat32(offset + 8, Endian.little);
+          final v1x = bd.getFloat32(offset + 12, Endian.little);
+          final v1y = bd.getFloat32(offset + 16, Endian.little);
+          final v1z = bd.getFloat32(offset + 20, Endian.little);
+          final v2x = bd.getFloat32(offset + 24, Endian.little);
+          final v2y = bd.getFloat32(offset + 28, Endian.little);
+          final v2z = bd.getFloat32(offset + 32, Endian.little);
+          final v3x = bd.getFloat32(offset + 36, Endian.little);
+          final v3y = bd.getFloat32(offset + 40, Endian.little);
+          final v3z = bd.getFloat32(offset + 44, Endian.little);
+          rawTriangles.add(
+            _StlTriangle(v1x, v1z, -v1y, v2x, v2z, -v2y, v3x, v3z, -v3y, nx, nz, -ny),
+          );
+          offset += 50;
+        }
+      }
+    }
+
+    if (!isBinary) {
+      final text = utf8.decode(data, allowMalformed: true);
+      final reg = RegExp(
+        r'vertex\s+([+\-]?\d*\.?\d+(?:[eE][+\-]?\d+)?)\s+([+\-]?\d*\.?\d+(?:[eE][+\-]?\d+)?)\s+([+\-]?\d*\.?\d+(?:[eE][+\-]?\d+)?)',
+        caseSensitive: false,
+      );
+      final matches = reg.allMatches(text).toList();
+      for (int i = 0; i + 2 < matches.length; i += 3) {
+        final v1x = double.tryParse(matches[i].group(1)!) ?? 0;
+        final v1y = double.tryParse(matches[i].group(2)!) ?? 0;
+        final v1z = double.tryParse(matches[i].group(3)!) ?? 0;
+        final v2x = double.tryParse(matches[i + 1].group(1)!) ?? 0;
+        final v2y = double.tryParse(matches[i + 1].group(2)!) ?? 0;
+        final v2z = double.tryParse(matches[i + 1].group(3)!) ?? 0;
+        final v3x = double.tryParse(matches[i + 2].group(1)!) ?? 0;
+        final v3y = double.tryParse(matches[i + 2].group(2)!) ?? 0;
+        final v3z = double.tryParse(matches[i + 2].group(3)!) ?? 0;
+        rawTriangles.add(
+          _StlTriangle(v1x, v1z, -v1y, v2x, v2z, -v2y, v3x, v3z, -v3y, 0, 1, 0),
+        );
+      }
+    }
+
+    if (rawTriangles.isEmpty) {
+      setState(() {
+        _stats = 'Keine 3D-Geometrie gefunden';
+      });
+      return;
+    }
+
+    double minX = double.infinity, minY = double.infinity, minZ = double.infinity;
+    double maxX = -double.infinity, maxY = -double.infinity, maxZ = -double.infinity;
+    for (final t in rawTriangles) {
+      minX = math.min(minX, math.min(t.v1x, math.min(t.v2x, t.v3x)));
+      minY = math.min(minY, math.min(t.v1y, math.min(t.v2y, t.v3y)));
+      minZ = math.min(minZ, math.min(t.v1z, math.min(t.v2z, t.v3z)));
+      maxX = math.max(maxX, math.max(t.v1x, math.max(t.v2x, t.v3x)));
+      maxY = math.max(maxY, math.max(t.v1y, math.max(t.v2y, t.v3y)));
+      maxZ = math.max(maxZ, math.max(t.v1z, math.max(t.v2z, t.v3z)));
+    }
+
+    final cx = (minX + maxX) / 2;
+    final cy = (minY + maxY) / 2;
+    final cz = (minZ + maxZ) / 2;
+    final dx = maxX - minX;
+    final dy = maxY - minY;
+    final dz = maxZ - minZ;
+    final radius = math.max(1.0, math.sqrt(dx * dx + dy * dy + dz * dz) / 2);
+
+    // Für flüssiges Rendering auf Smartphones ggf. auf max. 8000 Dreiecke abtasten
+    final step = math.max(1, (rawTriangles.length / 8000).ceil());
+    final centered = <_StlTriangle>[];
+    for (int i = 0; i < rawTriangles.length; i += step) {
+      final t = rawTriangles[i];
+      final ux = (t.v2x - t.v1x), uy = (t.v2y - t.v1y), uz = (t.v2z - t.v1z);
+      final vx = (t.v3x - t.v1x), vy = (t.v3y - t.v1y), vz = (t.v3z - t.v1z);
+      double nx = uy * vz - uz * vy;
+      double ny = uz * vx - ux * vz;
+      double nz = ux * vy - uy * vx;
+      final len = math.sqrt(nx * nx + ny * ny + nz * nz);
+      if (len > 0) {
+        nx /= len;
+        ny /= len;
+        nz /= len;
+      }
+      centered.add(
+        _StlTriangle(
+          t.v1x - cx,
+          t.v1y - cy,
+          t.v1z - cz,
+          t.v2x - cx,
+          t.v2y - cy,
+          t.v2z - cz,
+          t.v3x - cx,
+          t.v3y - cy,
+          t.v3z - cz,
+          nx,
+          ny,
+          nz,
+        ),
+      );
+    }
+
+    setState(() {
+      _triangles = centered;
+      _modelRadius = radius;
+      _stats =
+          '${rawTriangles.length} Dreiecke · ${dx.toStringAsFixed(1)} × ${dz.toStringAsFixed(1)} × ${dy.toStringAsFixed(1)} mm';
+    });
+  }
+
+  void _setView(String view) {
+    setState(() {
+      _pan = Offset.zero;
+      _zoom = 1.0;
+      if (view == 'front') {
+        _rotX = 0;
+        _rotY = 0;
+      } else if (view == 'top') {
+        _rotX = -math.pi / 2;
+        _rotY = 0;
+      } else if (view == 'side') {
+        _rotX = 0;
+        _rotY = math.pi / 2;
+      } else {
+        _rotX = -0.55;
+        _rotY = 0.65;
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0F172A),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF1E293B),
+        foregroundColor: Colors.white,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(widget.fileName, style: const TextStyle(fontSize: 15)),
+            Text(
+              _stats,
+              style: const TextStyle(fontSize: 11, color: Colors.white70),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.share),
+            tooltip: '3D-Datei teilen / speichern',
+            onPressed: () {
+              Share.shareXFiles([XFile(widget.filePath)], text: widget.fileName);
+            },
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          Container(
+            color: const Color(0xFF1E293B),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildToolBtn('Iso (3D)', () => _setView('iso')),
+                  _buildToolBtn('Vorne', () => _setView('front')),
+                  _buildToolBtn('Oben', () => _setView('top')),
+                  _buildToolBtn('Seite', () => _setView('side')),
+                  const SizedBox(width: 6),
+                  _buildToolBtn(
+                    'Drahtgitter',
+                    () => setState(() => _wireframe = !_wireframe),
+                    active: _wireframe,
+                  ),
+                  _buildToolBtn(
+                    'Gitter',
+                    () => setState(() => _showGrid = !_showGrid),
+                    active: _showGrid,
+                  ),
+                  const SizedBox(width: 8),
+                  _buildColorDot(const Color(0xFF38BDF8)),
+                  _buildColorDot(const Color(0xFF14B8A6)),
+                  _buildColorDot(const Color(0xFFCBD5E1)),
+                  _buildColorDot(const Color(0xFFFB923C)),
+                ],
+              ),
+            ),
+          ),
+          Expanded(
+            child: GestureDetector(
+              onScaleStart: (d) {
+                _baseZoom = _zoom;
+                _lastFocalPoint = d.focalPoint;
+              },
+              onScaleUpdate: (d) {
+                setState(() {
+                  if (d.pointerCount == 1) {
+                    final delta = d.focalPoint - _lastFocalPoint;
+                    _rotY += delta.dx * 0.01;
+                    _rotX = (_rotX + delta.dy * 0.01).clamp(
+                      -math.pi / 2,
+                      math.pi / 2,
+                    );
+                  } else {
+                    _zoom = (_baseZoom * d.scale).clamp(0.25, 6.0);
+                    _pan += d.focalPoint - _lastFocalPoint;
+                  }
+                  _lastFocalPoint = d.focalPoint;
+                });
+              },
+              child: CustomPaint(
+                size: Size.infinite,
+                painter: _StlPainter(
+                  triangles: _triangles,
+                  modelRadius: _modelRadius,
+                  rotX: _rotX,
+                  rotY: _rotY,
+                  zoom: _zoom,
+                  pan: _pan,
+                  wireframe: _wireframe,
+                  showGrid: _showGrid,
+                  baseColor: _modelColor,
+                ),
+              ),
+            ),
+          ),
+          Container(
+            color: const Color(0xFF1E293B),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            width: double.infinity,
+            child: const Text(
+              '1 Finger: Drehen · 2 Finger: Verschieben & Zoomen',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white60, fontSize: 11),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToolBtn(String label, VoidCallback onTap, {bool active = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: active ? Colors.lightBlue.shade600 : const Color(0xFF334155),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildColorDot(Color color) {
+    final selected = _modelColor == color;
+    return GestureDetector(
+      onTap: () => setState(() => _modelColor = color),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        width: 20,
+        height: 20,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: selected ? Colors.white : Colors.white38,
+            width: selected ? 2.5 : 1,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StlPainter extends CustomPainter {
+  final List<_StlTriangle> triangles;
+  final double modelRadius;
+  final double rotX;
+  final double rotY;
+  final double zoom;
+  final Offset pan;
+  final bool wireframe;
+  final bool showGrid;
+  final Color baseColor;
+
+  _StlPainter({
+    required this.triangles,
+    required this.modelRadius,
+    required this.rotX,
+    required this.rotY,
+    required this.zoom,
+    required this.pan,
+    required this.wireframe,
+    required this.showGrid,
+    required this.baseColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cx = size.width / 2 + pan.dx;
+    final cy = size.height / 2 + pan.dy;
+    final scale =
+        (math.min(size.width, size.height) * 0.38 / modelRadius) * zoom;
+
+    final cosY = math.cos(rotY), sinY = math.sin(rotY);
+    final cosX = math.cos(rotX), sinX = math.sin(rotX);
+
+    Offset project(double x, double y, double z) {
+      final x1 = x * cosY + z * sinY;
+      final z1 = -x * sinY + z * cosY;
+      final y2 = y * cosX - z1 * sinX;
+      return Offset(cx + x1 * scale, cy - y2 * scale);
+    }
+
+    if (showGrid) {
+      final gridPaint = Paint()
+        ..color = Colors.white12
+        ..strokeWidth = 1;
+      final g = modelRadius * 1.2;
+      for (int i = -5; i <= 5; i++) {
+        final pos = (i / 5) * g;
+        canvas.drawLine(
+          project(-g, -modelRadius * 0.6, pos),
+          project(g, -modelRadius * 0.6, pos),
+          gridPaint,
+        );
+        canvas.drawLine(
+          project(pos, -modelRadius * 0.6, -g),
+          project(pos, -modelRadius * 0.6, g),
+          gridPaint,
+        );
+      }
+    }
+
+    final projected = <({
+      Offset p1,
+      Offset p2,
+      Offset p3,
+      double zOrder,
+      double shade,
+    })>[];
+
+    for (final t in triangles) {
+      final x1 = t.v1x * cosY + t.v1z * sinY;
+      final z1 = -t.v1x * sinY + t.v1z * cosY;
+      final y1 = t.v1y * cosX - z1 * sinX;
+      final zz1 = t.v1y * sinX + z1 * cosX;
+
+      final x2 = t.v2x * cosY + t.v2z * sinY;
+      final z2 = -t.v2x * sinY + t.v2z * cosY;
+      final y2 = t.v2y * cosX - z2 * sinX;
+      final zz2 = t.v2y * sinX + z2 * cosX;
+
+      final x3 = t.v3x * cosY + t.v3z * sinY;
+      final z3 = -t.v3x * sinY + t.v3z * cosY;
+      final y3 = t.v3y * cosX - z3 * sinX;
+      final zz3 = t.v3y * sinX + z3 * cosX;
+
+      final nx1 = t.nx * cosY + t.nz * sinY;
+      final nz1 = -t.nx * sinY + t.nz * cosY;
+      final ny2 = t.ny * cosX - nz1 * sinX;
+      final nz2 = t.ny * sinX + nz1 * cosX;
+
+      final light = (nx1 * 0.4 + ny2 * 0.6 + nz2.abs() * 0.7).clamp(0.2, 1.0);
+
+      projected.add((
+        p1: Offset(cx + x1 * scale, cy - y1 * scale),
+        p2: Offset(cx + x2 * scale, cy - y2 * scale),
+        p3: Offset(cx + x3 * scale, cy - y3 * scale),
+        zOrder: (zz1 + zz2 + zz3) / 3,
+        shade: light,
+      ));
+    }
+
+    projected.sort((a, b) => a.zOrder.compareTo(b.zOrder));
+
+    final fillPaint = Paint()..style = PaintingStyle.fill;
+    final wirePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.7
+      ..color = wireframe ? baseColor : Colors.black26;
+
+    for (final tri in projected) {
+      final path = Path()
+        ..moveTo(tri.p1.dx, tri.p1.dy)
+        ..lineTo(tri.p2.dx, tri.p2.dy)
+        ..lineTo(tri.p3.dx, tri.p3.dy)
+        ..close();
+
+      if (!wireframe) {
+        fillPaint.color = Color.fromARGB(
+          255,
+          ((baseColor.r * 255) * tri.shade).round().clamp(0, 255),
+          ((baseColor.g * 255) * tri.shade).round().clamp(0, 255),
+          ((baseColor.b * 255) * tri.shade).round().clamp(0, 255),
+        );
+        canvas.drawPath(path, fillPaint);
+      } else {
+        canvas.drawPath(path, wirePaint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _StlPainter oldDelegate) => true;
+}
+

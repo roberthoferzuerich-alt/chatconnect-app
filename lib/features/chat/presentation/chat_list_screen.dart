@@ -181,11 +181,22 @@ class ChatListScreen extends ConsumerWidget {
                   )
                 else
                   ...activeConvos.map((convo) {
-                    final otherUser = convo.users.firstWhere(
+                    final partnerCandidates = convo.users.where(
                       (u) => u.id != currentUser?.id,
-                      orElse: () => convo.users.first,
                     );
-                    final avatarUrl = !convo.isGroup ? otherUser.fullAvatarUrl : null;
+                    final isSelfChat =
+                        !convo.isGroup && partnerCandidates.isEmpty;
+                    final otherUser = partnerCandidates.isNotEmpty
+                        ? partnerCandidates.first
+                        : convo.users.first;
+                    final avatarUrl = !convo.isGroup
+                        ? otherUser.fullAvatarUrl
+                        : null;
+                    final displayTitle = convo.isGroup
+                        ? (convo.name ?? 'Gruppe')
+                        : (isSelfChat
+                              ? '${otherUser.name} (Ich / Eigene Dateien)'
+                              : otherUser.name);
 
                     return Dismissible(
                       key: Key('convo_${convo.id}'),
@@ -231,16 +242,12 @@ class ChatListScreen extends ConsumerWidget {
                       child: ListTile(
                         leading: AppAvatar(
                           avatarUrl: avatarUrl,
-                          name: convo.isGroup
-                              ? (convo.name ?? 'Gruppe')
-                              : otherUser.name,
+                          name: displayTitle,
                           isGroup: convo.isGroup,
                           radius: 24,
                         ),
                         title: Text(
-                          convo.isGroup
-                              ? convo.name ?? 'Gruppe'
-                              : otherUser.name,
+                          displayTitle,
                           style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
                         subtitle: Text(
