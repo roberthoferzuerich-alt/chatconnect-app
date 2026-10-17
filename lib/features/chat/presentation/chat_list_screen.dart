@@ -48,9 +48,24 @@ class ChatListScreen extends ConsumerWidget {
             onTap: () => context.push('/settings'),
           ),
         ),
-        title: const Text(
-          'ChatConnect',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'ChatConnect',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+            if (currentUser != null && currentUser.name.isNotEmpty)
+              Text(
+                currentUser.name,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+          ],
         ),
         actions: [
           const Center(child: ConnectionIndicator()),
