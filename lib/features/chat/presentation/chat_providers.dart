@@ -154,7 +154,7 @@ class MessagesNotifier extends StateNotifier<AsyncValue<List<Message>>> {
   String _messagesSignature(List<Message> list) {
     final sb = StringBuffer();
     for (final m in list) {
-      sb.write('${m.id}:${m.readAt != null ? 1 : 0}:');
+      sb.write('${m.id}:${m.readAt != null ? 1 : 0}:${m.content.hashCode}:');
       for (final r in m.reactions) {
         if (r is Map) {
           sb.write('${r['user_id']}_${r['reaction']},');
@@ -297,5 +297,19 @@ class MessagesNotifier extends StateNotifier<AsyncValue<List<Message>>> {
         );
       }
     } catch (e) {}
+  }
+
+  Future<void> editMessage(int messageId, String content) async {
+    try {
+      final updatedMsg = await _repo.updateMessage(messageId, content);
+      if (state.hasValue) {
+        final currentList = state.value!;
+        state = AsyncValue.data(
+          currentList.map((m) => m.id == messageId ? updatedMsg : m).toList(),
+        );
+      }
+    } catch (e) {
+      rethrow;
+    }
   }
 }

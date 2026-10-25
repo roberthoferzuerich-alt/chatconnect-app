@@ -22,21 +22,22 @@ Willkommen bei **ChatConnect**, deinem sicheren und vielseitigen Messenger für 
 - Tippe deine Nachricht in das Textfeld am unteren Rand ein und drücke **Enter** oder tippe auf den **grünen Senden-Pfeil**.
 - Über das **Smiley-Symbol (😊)** links neben dem Textfeld kannst du Emojis aus allen Kategorien oder per Stichwortsuche einfügen.
 - Über das **Kamera-/Galerie-Symbol (📷)** versendest du hochauflösende Fotos & KI-Bilder bis **25 MB**, über das **Dokument-Symbol (📄)** Dateien bis **500 MB** (`PDF`, `Word`, `Excel`, `ZIP`, `7-Zip`, Minecraft-Mods `.jar`, `.mcpack`, `.mcworld`, Markdown `.md` sowie 3D-Modelle `.stl` / `.ctl`).
+- **📋 `Strg + V` & Drag-and-Drop (WebApp):** Screenshots aus der Zwischenablage (`Win + Shift + S`) kannst du im Browser direkt mit **`Strg + V`** in den Chat einfügen. Beliebige Dateien, Bilder und `.stl`-Modelle lassen sich zudem einfach per **Drag & Drop** mitten ins Chatfenster ziehen!
 
 ---
 
-## 3. Interaktive Chat-Funktionen: Reaktionen, Antworten, Favoriten & Suche 💬
+## 3. Interaktive Chat-Funktionen: Reaktionen, Antworten, Bearbeiten, Favoriten & Suche 💬
 
-### 😊 Emoji-Reaktionen & ↩️ Antworten (Zitieren)
+### 😊 Emoji-Reaktionen, ↩️ Antworten & ✏️ Bearbeiten
 - **WebApp:** Fahre mit der Maus über eine Nachricht. Oben rechts erscheint eine Aktionsleiste:
   - **😊 Reagieren:** Wähle `👍`, `❤️`, `😂`, `😮`, `🎉` oder `🔥`. Die Reaktionen erscheinen in Echtzeit als anklickbare Badges direkt unter der Nachricht.
   - **↩️ Antworten:** Zitiert die ausgewählte Nachricht über dem Texteingabefeld und stellt das Zitat beim Senden als übersichtliche Zitat-Box dar.
+  - **✏️ Bearbeiten:** Eigene Textnachrichten lassen sich jederzeit nachträglich korrigieren (mit Hinweis *„(bearbeitet)“*).
   - **★ Mit Stern markieren:** Speichert wichtige Nachrichten, 3D-Modelle oder Links in deiner Favoritenliste (**3-Punkte-Menü ➔ Mit Stern markiert**), inklusive Suchfunktion und direktem **„Springen“**-Button.
 - **Android-App:** Drücke **lange mit dem Finger** auf eine Nachricht:
   - Reagiere mit `👍`, `❤️`, `😂`, `😮`, `🎉` oder `🔥` (oder tippe direkt auf ein bestehendes Reaktions-Badge unter einer Nachricht).
-  - Wähle **„↩️ Antworten / Zitieren“**, um direkt mit einer Zitat-Box auf die Nachricht zu antworten (100 % kompatibel zwischen Smartphone & PC).
-  - Wähle **„⭐ Mit Stern markieren“**, um die Nachricht dauerhaft als Favorit zu kennzeichnen. Über das **3-Punkte-Menü (⋮) ➔ ⭐ Nur Stern-Favoriten** im Chat kannst du dir jederzeit alle markierten Nachrichten anzeigen lassen.
-- **Live-Synchronisation (ohne Neuladen):** Blaue Gelesen-Doppelhäkchen (`✓✓`), Emoji-Reaktionen und gelöschte Nachrichten aktualisieren sich sowohl im Browser als auch in der Android-App automatisch in Echtzeit.
+  - Wähle **„↩️ Antworten / Zitieren“**, **„✏️ Nachricht bearbeiten“** oder **„⭐ Mit Stern markieren“**.
+- **Live-Synchronisation (ohne Neuladen):** Blaue Gelesen-Doppelhäkchen (`✓✓`), Emoji-Reaktionen, bearbeitete Texte und gelöschte Nachrichten aktualisieren sich sowohl im Browser als auch in der Android-App automatisch in Echtzeit.
 
 ### 🔍 Volltextsuche im geöffneten Chat, Schnellfilter & Archiv
 - **Suche im Chat:** Tippe oben rechts im geöffneten Chat auf die **Lupe (🔍)** (oder drücke am PC `Strg + F`), um den Chatverlauf nach Texten oder Dateinamen (`.stl`, `.jar`, `.zip`, `.md`) zu durchsuchen.

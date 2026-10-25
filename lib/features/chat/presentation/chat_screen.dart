@@ -225,6 +225,30 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               },
             ),
             ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.lightBlue.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.view_in_ar, color: Colors.lightBlue),
+              ),
+              title: const Text(
+                '🧊 3D-Modell-Generator (.STL)',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.lightBlue,
+                ),
+              ),
+              subtitle: const Text(
+                '3D-Modell per Text erstellen, im 3D-Viewer prüfen & senden',
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _showStlGeneratorDialog();
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.camera_alt, color: Colors.teal),
               title: const Text('Kamera'),
               onTap: () {
@@ -399,6 +423,30 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         return;
       }
 
+      final isZipArchive =
+          lowerName.endsWith('.zip') ||
+          lowerName.endsWith('.jar') ||
+          lowerName.endsWith('.mcpack') ||
+          lowerName.endsWith('.mcworld') ||
+          lowerName.endsWith('.mcaddon') ||
+          lowerName.endsWith('.3mf');
+
+      if (isZipArchive) {
+        final bytes = await File(savePath).readAsBytes();
+        if (!mounted) return;
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (ctx) => _ArchiveInspectorScreen(
+              fileName: displayFileName,
+              filePath: savePath,
+              bytes: bytes,
+            ),
+          ),
+        );
+        return;
+      }
+
       await Share.shareXFiles([XFile(savePath)], text: displayFileName);
     } catch (e) {
       if (mounted) {
@@ -558,6 +606,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   ).showSnackBar(const SnackBar(content: Text('Kopiert!')));
                 },
               ),
+            if (isMe && msg.content.isNotEmpty)
+              ListTile(
+                leading: const Icon(Icons.edit_outlined, color: Colors.teal),
+                title: const Text('Nachricht bearbeiten ✏️'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showEditMessageDialog(msg);
+                },
+              ),
             ListTile(
               leading: const Icon(Icons.delete, color: Colors.red),
               title: const Text('Löschen', style: TextStyle(color: Colors.red)),
@@ -589,6 +646,273 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showEditMessageDialog(Message msg) {
+    final parsed = _parseQuotedContent(msg.content);
+    final quoteHeader = (parsed.author != null && parsed.quoted != null)
+        ? '> 💬 @${parsed.author}: "${parsed.quoted}"\n'
+        : '';
+    final cleanBody = parsed.body.replaceFirst(
+      RegExp(r'\s*\(bearbeitet\)\s*$'),
+      '',
+    );
+    final editCtrl = TextEditingController(text: cleanBody);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('✏️ Nachricht bearbeiten'),
+        content: TextField(
+          controller: editCtrl,
+          autofocus: true,
+          maxLines: 5,
+          minLines: 1,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            hintText: 'Nachrichtentext...',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Abbrechen'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF00A884),
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              final nextBody = editCtrl.text.trim();
+              Navigator.pop(ctx);
+              if (nextBody.isEmpty || nextBody == cleanBody.trim()) return;
+              try {
+                await ref
+                    .read(messagesProvider(widget.conversationId).notifier)
+                    .editMessage(msg.id, '$quoteHeader$nextBody');
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Bearbeiten fehlgeschlagen: $e')),
+                  );
+                }
+              }
+            },
+            child: const Text('Speichern'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showStlGeneratorDialog() {
+    final promptCtrl = TextEditingController(
+      text: 'Mittelschnauzer liegend auf Sockel',
+    );
+    double scaleFactor = 1.0;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF0F172A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          final presets = [
+            ('🐶 Mittelschnauzer', 'Mittelschnauzer liegend auf Sockel'),
+            ('🏷️ Schlüsselanhänger', 'Schlüsselanhänger ROBI'),
+            ('⚙️ Zahnrad 20Z', 'Zahnrad 20 Zähne'),
+            ('🚀 Rakete', 'Weltraum-Rakete mit Flügeln'),
+            ('🏰 Ritterburg', 'Mittelalterliche Ritterburg mit 4 Türmen'),
+            ('❤️ Herz-Dose', 'Herz-Schatulle 3D'),
+            ('🎲 Spielwürfel', 'Spielwürfel mit Augen'),
+          ];
+
+          Future<void> runGenerate({required bool sendToChat}) async {
+            final prompt = promptCtrl.text.trim();
+            if (prompt.isEmpty) return;
+            Navigator.pop(ctx);
+            final result = _StlProceduralGenerator.generateBinaryStl(
+              prompt,
+              scaleFactor: scaleFactor,
+            );
+            final tempDir = await getTemporaryDirectory();
+            final filePath = '${tempDir.path}/${result.fileName}';
+            await File(filePath).writeAsBytes(result.bytes);
+
+            if (!mounted) return;
+            if (sendToChat) {
+              setState(() {
+                _attachedDocumentPath = filePath;
+                _attachedDocumentName = result.fileName;
+                if (_msgCtrl.text.trim().isEmpty) {
+                  _msgCtrl.text = '🧊 3D-Modell: $prompt';
+                }
+              });
+              await _send();
+            } else {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => _StlViewerScreen(
+                    fileName: result.fileName,
+                    filePath: filePath,
+                    bytes: result.bytes,
+                  ),
+                ),
+              );
+            }
+          }
+
+          return Padding(
+            padding: EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 18,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF00D4AA).withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.view_in_ar,
+                        color: Color(0xFF00D4AA),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '3D-Modell-Generator (.STL)',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          Text(
+                            'Erzeugt druckfertige Binär-STL-Modelle direkt auf dem Smartphone',
+                            style: TextStyle(
+                              color: Colors.white60,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: promptCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: 'Was soll als 3D-Modell erstellt werden?',
+                    labelStyle: const TextStyle(color: Colors.white70),
+                    filled: true,
+                    fillColor: const Color(0xFF1E293B),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: presets.map((p) {
+                    return ActionChip(
+                      backgroundColor: const Color(0xFF1E293B),
+                      label: Text(
+                        p.$1,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                        ),
+                      ),
+                      onPressed: () =>
+                          setSheetState(() => promptCtrl.text = p.$2),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    const Text(
+                      'Modell-Größe:',
+                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
+                    Expanded(
+                      child: Slider(
+                        value: scaleFactor,
+                        min: 0.5,
+                        max: 2.0,
+                        divisions: 6,
+                        activeColor: const Color(0xFF00D4AA),
+                        label: '${(scaleFactor * 100).round()}%',
+                        onChanged: (v) => setSheetState(() => scaleFactor = v),
+                      ),
+                    ),
+                    Text(
+                      '${(scaleFactor * 100).round()}%',
+                      style: const TextStyle(
+                        color: Color(0xFF00D4AA),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF00D4AA),
+                          side: const BorderSide(color: Color(0xFF00D4AA)),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        onPressed: () => runGenerate(sendToChat: false),
+                        icon: const Icon(Icons.visibility, size: 18),
+                        label: const Text('3D-Vorschau'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF00A884),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        onPressed: () => runGenerate(sendToChat: true),
+                        icon: const Icon(Icons.send, size: 18),
+                        label: const Text('In Chat senden'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -2500,4 +2824,524 @@ class _StlPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _StlPainter oldDelegate) => true;
+}
+
+// ============================================================================
+// 📦 ZIP / MINECRAFT-JAR / 3MF INHALTS-INSPEKTOR (ANDROID)
+// ============================================================================
+class _ZipEntryInfo {
+  final String name;
+  final bool isDir;
+  final int compression;
+  final int compressedSize;
+  final int uncompressedSize;
+  final int localHeaderOffset;
+
+  const _ZipEntryInfo({
+    required this.name,
+    required this.isDir,
+    required this.compression,
+    required this.compressedSize,
+    required this.uncompressedSize,
+    required this.localHeaderOffset,
+  });
+}
+
+class _ArchiveInspectorScreen extends StatefulWidget {
+  final String fileName;
+  final String filePath;
+  final Uint8List bytes;
+
+  const _ArchiveInspectorScreen({
+    required this.fileName,
+    required this.filePath,
+    required this.bytes,
+  });
+
+  @override
+  State<_ArchiveInspectorScreen> createState() =>
+      _ArchiveInspectorScreenState();
+}
+
+class _ArchiveInspectorScreenState extends State<_ArchiveInspectorScreen> {
+  List<_ZipEntryInfo> _entries = [];
+  String _searchQuery = '';
+  String? _minecraftModInfo;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _parseZip();
+  }
+
+  void _parseZip() {
+    try {
+      final bytes = widget.bytes;
+      final bd = ByteData.sublistView(bytes);
+      int eocd = -1;
+      final minOff = math.max(0, bytes.length - 65557);
+      for (int i = bytes.length - 22; i >= minOff; i--) {
+        if (bd.getUint32(i, Endian.little) == 0x06054b50) {
+          eocd = i;
+          break;
+        }
+      }
+      if (eocd == -1) {
+        setState(() => _error = 'Kein gültiges ZIP/JAR-Verzeichnis gefunden.');
+        return;
+      }
+
+      final totalEntries = bd.getUint16(eocd + 10, Endian.little);
+      final cdOffset = bd.getUint32(eocd + 16, Endian.little);
+      final parsed = <_ZipEntryInfo>[];
+      int ptr = cdOffset;
+
+      for (int i = 0; i < totalEntries && ptr + 46 <= bytes.length; i++) {
+        if (bd.getUint32(ptr, Endian.little) != 0x02014b50) break;
+        final comp = bd.getUint16(ptr + 10, Endian.little);
+        final compSize = bd.getUint32(ptr + 20, Endian.little);
+        final uncompSize = bd.getUint32(ptr + 24, Endian.little);
+        final nameLen = bd.getUint16(ptr + 28, Endian.little);
+        final extraLen = bd.getUint16(ptr + 30, Endian.little);
+        final commentLen = bd.getUint16(ptr + 32, Endian.little);
+        final localOff = bd.getUint32(ptr + 42, Endian.little);
+        final name = utf8.decode(
+          bytes.sublist(ptr + 46, math.min(bytes.length, ptr + 46 + nameLen)),
+          allowMalformed: true,
+        );
+        parsed.add(
+          _ZipEntryInfo(
+            name: name,
+            isDir: name.endsWith('/'),
+            compression: comp,
+            compressedSize: compSize,
+            uncompressedSize: uncompSize,
+            localHeaderOffset: localOff,
+          ),
+        );
+        ptr += 46 + nameLen + extraLen + commentLen;
+      }
+
+      String? mcInfo;
+      final modEntry = parsed
+          .where(
+            (e) =>
+                e.name == 'fabric.mod.json' ||
+                e.name == 'pack.mcmeta' ||
+                e.name.endsWith('mods.toml'),
+          )
+          .firstOrNull;
+      if (modEntry != null) {
+        final txt = _extractText(modEntry);
+        if (txt != null) {
+          try {
+            final map = jsonDecode(txt);
+            if (map is Map) {
+              final modName =
+                  map['name'] ??
+                  map['id'] ??
+                  (map['pack'] is Map ? map['pack']['description'] : null) ??
+                  widget.fileName;
+              final ver = map['version'] != null ? 'v${map['version']}' : '';
+              final desc = map['description'] ?? '';
+              mcInfo = '🎮 Minecraft-Paket: $modName $ver\n$desc'.trim();
+            }
+          } catch (_) {
+            mcInfo =
+                '🎮 Minecraft-Metadaten (${modEntry.name}) im Archiv erkannt!';
+          }
+        }
+      }
+
+      setState(() {
+        _entries = parsed;
+        _minecraftModInfo = mcInfo;
+      });
+    } catch (e) {
+      setState(() => _error = 'Archiv-Fehler: $e');
+    }
+  }
+
+  String? _extractText(_ZipEntryInfo entry) {
+    try {
+      final bytes = widget.bytes;
+      final bd = ByteData.sublistView(bytes);
+      final lh = entry.localHeaderOffset;
+      if (lh + 30 > bytes.length ||
+          bd.getUint32(lh, Endian.little) != 0x04034b50) {
+        return null;
+      }
+      final nameLen = bd.getUint16(lh + 26, Endian.little);
+      final extraLen = bd.getUint16(lh + 28, Endian.little);
+      final start = lh + 30 + nameLen + extraLen;
+      final end = math.min(bytes.length, start + entry.compressedSize);
+      final slice = bytes.sublist(start, end);
+      if (entry.compression == 0) {
+        return utf8.decode(slice, allowMalformed: true);
+      } else if (entry.compression == 8) {
+        final decompressed = ZLibCodec(raw: true).decode(slice);
+        return utf8.decode(decompressed, allowMalformed: true);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final q = _searchQuery.toLowerCase();
+    final filtered = _entries
+        .where((e) => q.isEmpty || e.name.toLowerCase().contains(q))
+        .toList();
+    final totalKb =
+        _entries.fold<int>(0, (s, e) => s + e.uncompressedSize) / 1024.0;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(widget.fileName, style: const TextStyle(fontSize: 15)),
+            Text(
+              '${_entries.length} Einträge • ${totalKb.toStringAsFixed(1)} KB entpackt',
+              style: const TextStyle(fontSize: 11),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.share),
+            tooltip: 'Archiv teilen / speichern',
+            onPressed: () {
+              Share.shareXFiles([
+                XFile(widget.filePath),
+              ], text: widget.fileName);
+            },
+          ),
+        ],
+      ),
+      body: _error != null
+          ? Center(child: Text(_error!))
+          : Column(
+              children: [
+                if (_minecraftModInfo != null)
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.fromLTRB(12, 10, 12, 4),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.amber.shade300),
+                    ),
+                    child: Text(
+                      _minecraftModInfo!,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.amber.shade900,
+                      ),
+                    ),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: TextField(
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.search, size: 18),
+                      hintText: 'Dateien im Archiv filtern...',
+                      isDense: true,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onChanged: (v) => setState(() => _searchQuery = v.trim()),
+                  ),
+                ),
+                Expanded(
+                  child: ListView.separated(
+                    itemCount: filtered.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (ctx, idx) {
+                      final e = filtered[idx];
+                      final isText =
+                          !e.isDir &&
+                          RegExp(
+                            r'\.(json|toml|mcmeta|txt|md|cfg|properties|yml|yaml|xml|scad)$',
+                            caseSensitive: false,
+                          ).hasMatch(e.name);
+                      final sizeLabel = e.isDir
+                          ? 'Ordner'
+                          : (e.uncompressedSize < 1024
+                                ? '${e.uncompressedSize} B'
+                                : '${(e.uncompressedSize / 1024).toStringAsFixed(1)} KB');
+                      return ListTile(
+                        dense: true,
+                        leading: Icon(
+                          e.isDir
+                              ? Icons.folder_outlined
+                              : (isText
+                                    ? Icons.description_outlined
+                                    : Icons.insert_drive_file_outlined),
+                          color: e.isDir ? Colors.amber.shade700 : Colors.teal,
+                        ),
+                        title: Text(
+                          e.name,
+                          style: const TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                          ),
+                        ),
+                        subtitle: Text(
+                          sizeLabel,
+                          style: const TextStyle(fontSize: 11),
+                        ),
+                        trailing: isText
+                            ? TextButton(
+                                onPressed: () {
+                                  final txt = _extractText(e);
+                                  showDialog(
+                                    context: context,
+                                    builder: (dCtx) => AlertDialog(
+                                      title: Text(
+                                        e.name,
+                                        style: const TextStyle(fontSize: 14),
+                                      ),
+                                      content: SingleChildScrollView(
+                                        child: SelectableText(
+                                          txt ?? 'Binärdatei',
+                                          style: const TextStyle(
+                                            fontFamily: 'monospace',
+                                            fontSize: 11,
+                                          ),
+                                        ),
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(dCtx),
+                                          child: const Text('Schließen'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                                child: const Text('Lesen'),
+                              )
+                            : null,
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+}
+
+// ============================================================================
+// 🧊 PROZEDURALER 3D-MODELL-GENERATOR (.STL) FÜR ANDROID
+// ============================================================================
+class _StlProceduralGenerator {
+  static ({Uint8List bytes, String fileName}) generateBinaryStl(
+    String prompt, {
+    double scaleFactor = 1.0,
+  }) {
+    final lower = prompt.toLowerCase();
+    final tris = <List<double>>[];
+
+    void addTri(
+      double x1,
+      double y1,
+      double z1,
+      double x2,
+      double y2,
+      double z2,
+      double x3,
+      double y3,
+      double z3,
+    ) {
+      tris.add([
+        x1 * scaleFactor,
+        y1 * scaleFactor,
+        z1 * scaleFactor,
+        x2 * scaleFactor,
+        y2 * scaleFactor,
+        z2 * scaleFactor,
+        x3 * scaleFactor,
+        y3 * scaleFactor,
+        z3 * scaleFactor,
+      ]);
+    }
+
+    void addBox(
+      double cx,
+      double cy,
+      double cz,
+      double dx,
+      double dy,
+      double dz,
+    ) {
+      final hx = dx / 2, hy = dy / 2, hz = dz / 2;
+      final x0 = cx - hx, x1 = cx + hx;
+      final y0 = cy - hy, y1 = cy + hy;
+      final z0 = cz - hz, z1 = cz + hz;
+      final v = [
+        [x0, y0, z0],
+        [x1, y0, z0],
+        [x1, y1, z0],
+        [x0, y1, z0],
+        [x0, y0, z1],
+        [x1, y0, z1],
+        [x1, y1, z1],
+        [x0, y1, z1],
+      ];
+      const faces = [
+        [0, 2, 1],
+        [0, 3, 2],
+        [4, 5, 6],
+        [4, 6, 7],
+        [0, 1, 5],
+        [0, 5, 4],
+        [2, 3, 7],
+        [2, 7, 6],
+        [1, 2, 6],
+        [1, 6, 5],
+        [3, 0, 4],
+        [3, 4, 7],
+      ];
+      for (final f in faces) {
+        addTri(
+          v[f[0]][0],
+          v[f[0]][1],
+          v[f[0]][2],
+          v[f[1]][0],
+          v[f[1]][1],
+          v[f[1]][2],
+          v[f[2]][0],
+          v[f[2]][1],
+          v[f[2]][2],
+        );
+      }
+    }
+
+    void addCylinder(
+      double cx,
+      double cy,
+      double z0,
+      double z1,
+      double rBottom,
+      double rTop, {
+      int segs = 28,
+    }) {
+      for (int i = 0; i < segs; i++) {
+        final a0 = (i / segs) * 2 * math.pi;
+        final a1 = ((i + 1) / segs) * 2 * math.pi;
+        final c0 = math.cos(a0), s0 = math.sin(a0);
+        final c1 = math.cos(a1), s1 = math.sin(a1);
+        final bx0 = cx + rBottom * c0, by0 = cy + rBottom * s0;
+        final bx1 = cx + rBottom * c1, by1 = cy + rBottom * s1;
+        final tx0 = cx + rTop * c0, ty0 = cy + rTop * s0;
+        final tx1 = cx + rTop * c1, ty1 = cy + rTop * s1;
+        addTri(bx0, by0, z0, bx1, by1, z0, tx1, ty1, z1);
+        addTri(bx0, by0, z0, tx1, ty1, z1, tx0, ty0, z1);
+        if (rBottom > 0) addTri(cx, cy, z0, bx1, by1, z0, bx0, by0, z0);
+        if (rTop > 0) addTri(cx, cy, z1, tx0, ty0, z1, tx1, ty1, z1);
+      }
+    }
+
+    if (lower.contains('schnauzer') || lower.contains('hund')) {
+      addCylinder(0, 0, 0, 3, 28, 30, segs: 36);
+      addBox(0, -2, 11, 18, 30, 14);
+      addBox(0, 7, 14, 20, 14, 15);
+      addBox(-6, 18, 5, 5, 14, 4);
+      addBox(6, 18, 5, 5, 14, 4);
+      addBox(-8, -12, 6, 6, 12, 6);
+      addBox(8, -12, 6, 6, 12, 6);
+      addBox(0, 12, 22, 11, 10, 12);
+      addBox(0, 16, 29, 13, 13, 11);
+      addBox(0, 25, 27, 9, 10, 7);
+      addBox(0, 26, 22, 10, 9, 9);
+      addBox(-4, 21, 34, 4, 4, 2);
+      addBox(4, 21, 34, 4, 4, 2);
+      addBox(-6, 15, 34, 3, 5, 6);
+      addBox(6, 15, 34, 3, 5, 6);
+      addBox(0, -18, 19, 3.5, 4, 9);
+    } else if (lower.contains('zahnrad') || lower.contains('gear')) {
+      final teeth = 20;
+      addCylinder(0, 0, 0, 8, 22, 22, segs: 40);
+      for (int i = 0; i < teeth; i++) {
+        final a = (i / teeth) * 2 * math.pi;
+        addBox(24 * math.cos(a), 24 * math.sin(a), 4, 5, 5, 8);
+      }
+    } else if (lower.contains('rakete') || lower.contains('rocket')) {
+      addCylinder(0, 0, 0, 6, 12, 9, segs: 28);
+      addCylinder(0, 0, 6, 42, 10, 10, segs: 28);
+      addCylinder(0, 0, 42, 62, 10, 0.2, segs: 28);
+      addBox(-12, 0, 10, 8, 2.5, 16);
+      addBox(12, 0, 10, 8, 2.5, 16);
+      addBox(0, -12, 10, 2.5, 8, 16);
+      addBox(0, 12, 10, 2.5, 8, 16);
+    } else if (lower.contains('burg') || lower.contains('castle')) {
+      addBox(0, 0, 1.5, 56, 56, 3);
+      addBox(0, 18, 10, 38, 4, 16);
+      addBox(0, -18, 10, 38, 4, 16);
+      addBox(-18, 0, 10, 4, 38, 16);
+      addBox(18, 0, 10, 4, 38, 16);
+      for (final sx in [-18.0, 18.0]) {
+        for (final sy in [-18.0, 18.0]) {
+          addCylinder(sx, sy, 2, 26, 6.5, 6.5, segs: 20);
+          addCylinder(sx, sy, 26, 36, 7.5, 0.2, segs: 20);
+        }
+      }
+      addBox(0, 0, 15, 16, 16, 26);
+    } else if (lower.contains('anhänger') || lower.contains('schild')) {
+      addBox(0, 0, 2, 54, 22, 4);
+      addCylinder(-22, 0, 0, 4, 4, 4, segs: 20);
+      addBox(4, 0, 5, 34, 10, 2.5);
+    } else {
+      addCylinder(0, 0, 0, 4, 24, 26, segs: 32);
+      addCylinder(0, 0, 4, 28, 18, 12, segs: 6);
+      addCylinder(0, 0, 28, 42, 12, 0.2, segs: 6);
+    }
+
+    final byteLen = 84 + tris.length * 50;
+    final out = Uint8List(byteLen);
+    final bd = ByteData.sublistView(out);
+    final header = 'ChatConnect 3D STL Generator - $prompt'
+        .padRight(80)
+        .substring(0, 80);
+    for (int i = 0; i < 80; i++) {
+      out[i] = header.codeUnitAt(i) & 0x7F;
+    }
+    bd.setUint32(80, tris.length, Endian.little);
+
+    int off = 84;
+    for (final t in tris) {
+      final ux = t[3] - t[0], uy = t[4] - t[1], uz = t[5] - t[2];
+      final vx = t[6] - t[0], vy = t[7] - t[1], vz = t[8] - t[2];
+      double nx = uy * vz - uz * vy;
+      double ny = uz * vx - ux * vz;
+      double nz = ux * vy - uy * vx;
+      final len = math.sqrt(nx * nx + ny * ny + nz * nz);
+      if (len > 0) {
+        nx /= len;
+        ny /= len;
+        nz /= len;
+      }
+      bd.setFloat32(off, nx, Endian.little);
+      bd.setFloat32(off + 4, ny, Endian.little);
+      bd.setFloat32(off + 8, nz, Endian.little);
+      for (int k = 0; k < 9; k++) {
+        bd.setFloat32(off + 12 + k * 4, t[k], Endian.little);
+      }
+      bd.setUint16(off + 48, 0, Endian.little);
+      off += 50;
+    }
+
+    final slug = prompt
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+        .replaceAll(RegExp(r'^_|_$'), '');
+    final fileName = '${slug.isEmpty ? "modell_3d" : slug}.stl';
+    return (bytes: out, fileName: fileName);
+  }
 }

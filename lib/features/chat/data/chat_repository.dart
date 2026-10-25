@@ -107,6 +107,14 @@ class ChatRepository {
     await _dio.post('messages/$messageId/delete');
   }
 
+  Future<Message> updateMessage(int messageId, String content) async {
+    final response = await _dio.post(
+      'messages/$messageId/update',
+      data: {'content': content},
+    );
+    return Message.fromJson(response.data);
+  }
+
   Future<Message> reactToMessage(int messageId, String emoji) async {
     final response = await _dio.post(
       'messages/$messageId/react',
