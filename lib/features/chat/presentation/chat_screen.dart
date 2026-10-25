@@ -50,6 +50,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   String? _attachedImagePath;
   String? _attachedDocumentPath;
   String? _attachedDocumentName;
+  Message? _replyingToMsg;
+  String _replyingToSender = '';
+  bool _showInChatSearch = false;
+  String _inChatSearchQuery = '';
+  bool _showStarredOnly = false;
+  final _inChatSearchCtrl = TextEditingController();
 
   @override
   void initState() {
@@ -66,6 +72,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   void dispose() {
     _msgCtrl.dispose();
+    _inChatSearchCtrl.dispose();
     _scrollCtrl.dispose();
     _focusNode.dispose();
     _audioRecorder.dispose();
@@ -119,12 +126,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Future<void> _send() async {
-    final text = _msgCtrl.text.trim();
+    final rawText = _msgCtrl.text.trim();
     final imageToSend = _attachedImagePath;
     final docToSend = _attachedDocumentPath;
     final docName = _attachedDocumentName;
 
-    if (text.isEmpty && imageToSend == null && docToSend == null) return;
+    if (rawText.isEmpty && imageToSend == null && docToSend == null) return;
+
+    String text = rawText;
+    if (_replyingToMsg != null) {
+      final cleanSnippet = _stripQuotePrefix(_replyingToMsg!.content)
+          .replaceAll('\n', ' ')
+          .trim();
+      final fallback = _replyingToMsg!.fileName ??
+          (_replyingToMsg!.imageUrl != null ? '📷 Bild' : 'Nachricht');
+      final snippet = (cleanSnippet.isNotEmpty ? cleanSnippet : fallback);
+      final shortSnippet = snippet.length > 80
+          ? '${snippet.substring(0, 80)}…'
+          : snippet;
+      text = '> 💬 @$_replyingToSender: "$shortSnippet"\n$rawText';
+    }
 
     _msgCtrl.clear();
     setState(() {
@@ -132,6 +153,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       _attachedImagePath = null;
       _attachedDocumentPath = null;
       _attachedDocumentName = null;
+      _replyingToMsg = null;
+      _replyingToSender = '';
     });
 
     try {
@@ -444,7 +467,31 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 
-  void _showMessageOptions(Message msg, bool isMe) {
+  String _stripQuotePrefix(String raw) {
+    final match = RegExp(
+      r'^> 💬 @([^:]+): "([^"]*)"\r?\n([\s\S]*)$',
+    ).firstMatch(raw);
+    return match != null ? (match.group(3) ?? '') : raw;
+  }
+
+  ({String? author, String? quoted, String body}) _parseQuotedContent(
+    String raw,
+  ) {
+    final match = RegExp(
+      r'^> 💬 @([^:]+): "([^"]*)"\r?\n([\s\S]*)$',
+    ).firstMatch(raw);
+    if (match != null) {
+      return (
+        author: match.group(1),
+        quoted: match.group(2),
+        body: match.group(3) ?? '',
+      );
+    }
+    return (author: null, quoted: null, body: raw);
+  }
+
+  void _showMessageOptions(Message msg, bool isMe, String senderName) {
+    final isStarred = ref.read(starredMessageIdsProvider).contains(msg.id);
     showModalBottomSheet(
       context: context,
       builder: (context) => SafeArea(
@@ -454,7 +501,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               padding: const EdgeInsets.symmetric(vertical: 16.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: ['👍', '❤️', '😂', '😮', '😢', '👏'].map((emoji) {
+                children: ['👍', '❤️', '😂', '😮', '🎉', '🔥'].map((emoji) {
                   return GestureDetector(
                     onTap: () {
                       Navigator.pop(context);
@@ -470,13 +517,42 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ),
             ),
             const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.reply, color: Color(0xFF00A884)),
+              title: const Text('Antworten / Zitieren'),
+              onTap: () {
+                Navigator.pop(context);
+                setState(() {
+                  _replyingToMsg = msg;
+                  _replyingToSender = senderName;
+                });
+                _focusNode.requestFocus();
+              },
+            ),
+            ListTile(
+              leading: Icon(
+                isStarred ? Icons.star : Icons.star_border,
+                color: Colors.amber.shade700,
+              ),
+              title: Text(
+                isStarred
+                    ? 'Stern-Markierung entfernen'
+                    : 'Mit Stern markieren ⭐',
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                ref.read(starredMessageIdsProvider.notifier).toggle(msg.id);
+              },
+            ),
             if (msg.content.isNotEmpty)
               ListTile(
                 leading: const Icon(Icons.copy),
                 title: const Text('Kopieren'),
                 onTap: () {
                   Navigator.pop(context);
-                  Clipboard.setData(ClipboardData(text: msg.content));
+                  Clipboard.setData(
+                    ClipboardData(text: _stripQuotePrefix(msg.content)),
+                  );
                   ScaffoldMessenger.of(
                     context,
                   ).showSnackBar(const SnackBar(content: Text('Kopiert!')));
@@ -656,9 +732,31 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 buttonSize: const Size(48, 48),
               ),
             ],
+            IconButton(
+              icon: Icon(
+                _showInChatSearch ? Icons.search_off : Icons.search,
+                color: _showInChatSearch ? const Color(0xFF00A884) : null,
+              ),
+              tooltip: 'Im Chat suchen',
+              onPressed: () {
+                setState(() {
+                  _showInChatSearch = !_showInChatSearch;
+                  if (!_showInChatSearch) {
+                    _inChatSearchQuery = '';
+                    _inChatSearchCtrl.clear();
+                  }
+                });
+              },
+            ),
             PopupMenuButton<String>(
               onSelected: (value) {
-                if (value == 'font_size') {
+                if (value == 'search_chat') {
+                  setState(() => _showInChatSearch = !_showInChatSearch);
+                } else if (value == 'starred_filter') {
+                  setState(() => _showStarredOnly = !_showStarredOnly);
+                } else if (value == 'assistant') {
+                  context.push('/assistant', extra: widget.conversationId);
+                } else if (value == 'font_size') {
                   showChatFontSizeDialog(context);
                 } else if (value == 'chat_settings') {
                   context.push('/settings_chats');
@@ -667,6 +765,44 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 }
               },
               itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: 'starred_filter',
+                  child: Row(
+                    children: [
+                      Icon(
+                        _showStarredOnly ? Icons.star : Icons.star_border,
+                        color: Colors.amber.shade700,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        _showStarredOnly
+                            ? 'Alle Nachrichten zeigen'
+                            : '⭐ Nur Stern-Favoriten',
+                      ),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'assistant',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.auto_awesome,
+                        color: Color(0xFF00A884),
+                        size: 20,
+                      ),
+                      SizedBox(width: 10),
+                      Text(
+                        'KI-Bildgenerator',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF00A884),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 const PopupMenuItem(
                   value: 'font_size',
                   child: Text('Chat-Schriftgröße'),
@@ -692,12 +828,87 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
           child: Column(
             children: [
+              if (_showInChatSearch || _showStarredOnly)
+                Container(
+                  color: Theme.of(context).colorScheme.surface,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.search,
+                        size: 18,
+                        color: Color(0xFF00A884),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          controller: _inChatSearchCtrl,
+                          autofocus: _showInChatSearch,
+                          decoration: const InputDecoration(
+                            hintText: 'Nachrichten im Chat durchsuchen...',
+                            isDense: true,
+                            border: InputBorder.none,
+                          ),
+                          onChanged: (val) =>
+                              setState(() => _inChatSearchQuery = val.trim()),
+                        ),
+                      ),
+                      if (_showStarredOnly)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: ActionChip(
+                            avatar: const Icon(
+                              Icons.star,
+                              size: 15,
+                              color: Colors.amber,
+                            ),
+                            label: const Text(
+                              'Stern-Filter',
+                              style: TextStyle(fontSize: 11),
+                            ),
+                            onPressed: () =>
+                                setState(() => _showStarredOnly = false),
+                          ),
+                        ),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 18),
+                        onPressed: () {
+                          setState(() {
+                            _showInChatSearch = false;
+                            _showStarredOnly = false;
+                            _inChatSearchQuery = '';
+                            _inChatSearchCtrl.clear();
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
               Expanded(
                 child: messagesState.when(
                   loading: () =>
                       const Center(child: CircularProgressIndicator()),
                   error: (e, _) => Center(child: Text('Fehler: $e')),
-                  data: (messages) {
+                  data: (allMessages) {
+                    final starredIds = ref.watch(starredMessageIdsProvider);
+                    final q = _inChatSearchQuery.toLowerCase();
+                    final messages = allMessages.where((m) {
+                      if (_showStarredOnly && !starredIds.contains(m.id)) {
+                        return false;
+                      }
+                      if (q.isNotEmpty) {
+                        final textMatch = m.content.toLowerCase().contains(q);
+                        final fileMatch = (m.fileName ?? '')
+                            .toLowerCase()
+                            .contains(q);
+                        return textMatch || fileMatch;
+                      }
+                      return true;
+                    }).toList();
+
                     return ListView.builder(
                       reverse: true,
                       controller: _scrollCtrl,
@@ -706,13 +917,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       itemBuilder: (context, index) {
                         final msg = messages[messages.length - 1 - index];
                         final isMe = msg.senderId == currentUser?.id;
+                        final isStarred = starredIds.contains(msg.id);
+                        final senderName = isMe
+                            ? (currentUser?.name ?? 'Ich')
+                            : (msg.sender?.name ?? otherUser?.name ?? chatTitle);
+                        final parsedQuote = _parseQuotedContent(msg.content);
 
                         return Align(
                           alignment: isMe
                               ? Alignment.centerRight
                               : Alignment.centerLeft,
                           child: GestureDetector(
-                            onLongPress: () => _showMessageOptions(msg, isMe),
+                            onLongPress: () =>
+                                _showMessageOptions(msg, isMe, senderName),
                             child: Container(
                               constraints: BoxConstraints(
                                 maxWidth:
@@ -1047,15 +1264,89 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                                   MediaQuery.of(
                                                     context,
                                                   ).size.width *
-                                                  0.5,
+                                                  0.62,
                                             ),
-                                            child: Text(
-                                              msg.content,
-                                              style: TextStyle(
-                                                fontSize:
-                                                    chatsSettings.chatFontSize,
-                                                color: Colors.black87,
-                                              ),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                if (parsedQuote.author !=
+                                                        null &&
+                                                    parsedQuote.quoted != null)
+                                                  Container(
+                                                    margin:
+                                                        const EdgeInsets.only(
+                                                          bottom: 6,
+                                                        ),
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 10,
+                                                          vertical: 6,
+                                                        ),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.black
+                                                          .withValues(
+                                                            alpha: 0.06,
+                                                          ),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            8,
+                                                          ),
+                                                      border: const Border(
+                                                        left: BorderSide(
+                                                          color: Color(
+                                                            0xFF00A884,
+                                                          ),
+                                                          width: 3.5,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Text(
+                                                          '↩️ ${parsedQuote.author}',
+                                                          style:
+                                                              const TextStyle(
+                                                                fontSize: 11,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                                color: Color(
+                                                                  0xFF008069,
+                                                                ),
+                                                              ),
+                                                        ),
+                                                        const SizedBox(
+                                                          height: 2,
+                                                        ),
+                                                        Text(
+                                                          parsedQuote.quoted!,
+                                                          maxLines: 2,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          style:
+                                                              const TextStyle(
+                                                                fontSize: 12,
+                                                                color: Colors
+                                                                    .black54,
+                                                              ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                if (parsedQuote.body.isNotEmpty)
+                                                  Text(
+                                                    parsedQuote.body,
+                                                    style: TextStyle(
+                                                      fontSize: chatsSettings
+                                                          .chatFontSize,
+                                                      color: Colors.black87,
+                                                    ),
+                                                  ),
+                                              ],
                                             ),
                                           ),
                                       ],
@@ -1066,35 +1357,79 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                         top: 4.0,
                                         bottom: 2.0,
                                       ),
-                                      child: Wrap(
-                                        spacing: 4,
-                                        children: msg.reactions.map((r) {
-                                          return Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 6,
-                                              vertical: 2,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: isMe
-                                                  ? Colors.teal.shade700
-                                                  : Colors.grey.shade300,
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                            ),
-                                            child: Text(
-                                              r['reaction'],
-                                              style: const TextStyle(
-                                                fontSize: 12,
-                                              ),
-                                            ),
+                                      child: Builder(
+                                        builder: (context) {
+                                          final counts = <String, int>{};
+                                          for (final r in msg.reactions) {
+                                            final emo = r is Map
+                                                ? (r['reaction']?.toString() ??
+                                                      '')
+                                                : r.toString();
+                                            if (emo.isNotEmpty) {
+                                              counts[emo] =
+                                                  (counts[emo] ?? 0) + 1;
+                                            }
+                                          }
+                                          return Wrap(
+                                            spacing: 4,
+                                            children: counts.entries.map((e) {
+                                              return GestureDetector(
+                                                onTap: () => ref
+                                                    .read(
+                                                      messagesProvider(
+                                                        widget.conversationId,
+                                                      ).notifier,
+                                                    )
+                                                    .toggleReaction(
+                                                      msg.id,
+                                                      e.key,
+                                                    ),
+                                                child: Container(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 7,
+                                                        vertical: 2,
+                                                      ),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white
+                                                        .withValues(alpha: 0.9),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
+                                                    border: Border.all(
+                                                      color: Colors.black12,
+                                                    ),
+                                                  ),
+                                                  child: Text(
+                                                    e.value > 1
+                                                        ? '${e.key} ${e.value}'
+                                                        : e.key,
+                                                    style: const TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ),
+                                              );
+                                            }).toList(),
                                           );
-                                        }).toList(),
+                                        },
                                       ),
                                     ),
                                   const SizedBox(height: 4),
                                   Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
+                                      if (isStarred) ...[
+                                        Icon(
+                                          Icons.star,
+                                          size: 13,
+                                          color: Colors.amber.shade700,
+                                        ),
+                                        const SizedBox(width: 3),
+                                      ],
                                       if (msg.createdAt != null)
                                         Text(
                                           DateFormat(
@@ -1141,6 +1476,76 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 child: SafeArea(
                   child: Column(
                     children: [
+                      if (_replyingToMsg != null)
+                        Container(
+                          margin: const EdgeInsets.fromLTRB(12, 8, 12, 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF00A884).withValues(
+                              alpha: 0.1,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            border: const Border(
+                              left: BorderSide(
+                                color: Color(0xFF00A884),
+                                width: 4,
+                              ),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.reply,
+                                size: 18,
+                                color: Color(0xFF00A884),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Antwort an $_replyingToSender',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                        color: Color(0xFF008069),
+                                      ),
+                                    ),
+                                    Text(
+                                      _stripQuotePrefix(
+                                            _replyingToMsg!.content,
+                                          ).isNotEmpty
+                                          ? _stripQuotePrefix(
+                                              _replyingToMsg!.content,
+                                            )
+                                          : (_replyingToMsg!.fileName ??
+                                                '📷 Medien-Anhang'),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.black54,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.close, size: 18),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                onPressed: () => setState(() {
+                                  _replyingToMsg = null;
+                                  _replyingToSender = '';
+                                }),
+                              ),
+                            ],
+                          ),
+                        ),
                       if (_attachedImagePath != null)
                         Padding(
                           padding: const EdgeInsets.symmetric(
@@ -1396,11 +1801,16 @@ class _StlViewerScreenState extends State<_StlViewerScreen> {
   Offset _pan = Offset.zero;
   double _baseZoom = 1.0;
   Offset _lastFocalPoint = Offset.zero;
-  bool _wireframe = false;
+  String _renderMode = 'solid'; // solid, wireframe, xray, rainbow, normals
   bool _showGrid = true;
-  Color _modelColor = const Color(0xFF38BDF8);
+  bool _showBBox = false;
+  Color _modelColor = const Color(0xFF00D4AA);
   String _stats = 'Analysiere 3D-Modell...';
   double _modelRadius = 50.0;
+  int _totalTriangleCount = 0;
+  double _volumeCm3 = 0.0;
+  double _areaCm2 = 0.0;
+  double _dimX = 0.0, _dimY = 0.0, _dimZ = 0.0;
 
   @override
   void initState() {
@@ -1504,6 +1914,9 @@ class _StlViewerScreenState extends State<_StlViewerScreen> {
     double maxX = -double.infinity,
         maxY = -double.infinity,
         maxZ = -double.infinity;
+    double signedVolumeMm3 = 0.0;
+    double surfaceAreaMm2 = 0.0;
+
     for (final t in rawTriangles) {
       minX = math.min(minX, math.min(t.v1x, math.min(t.v2x, t.v3x)));
       minY = math.min(minY, math.min(t.v1y, math.min(t.v2y, t.v3y)));
@@ -1511,6 +1924,22 @@ class _StlViewerScreenState extends State<_StlViewerScreen> {
       maxX = math.max(maxX, math.max(t.v1x, math.max(t.v2x, t.v3x)));
       maxY = math.max(maxY, math.max(t.v1y, math.max(t.v2y, t.v3y)));
       maxZ = math.max(maxZ, math.max(t.v1z, math.max(t.v2z, t.v3z)));
+
+      // Signed volume of tetrahedron (v1, v2, v3, origin)
+      signedVolumeMm3 +=
+          (t.v1x * (t.v2y * t.v3z - t.v2z * t.v3y) -
+              t.v1y * (t.v2x * t.v3z - t.v2z * t.v3x) +
+              t.v1z * (t.v2x * t.v3y - t.v2y * t.v3x)) /
+          6.0;
+
+      final ux = t.v2x - t.v1x, uy = t.v2y - t.v1y, uz = t.v2z - t.v1z;
+      final vx = t.v3x - t.v1x, vy = t.v3y - t.v1y, vz = t.v3z - t.v1z;
+      final cxCross = uy * vz - uz * vy;
+      final cyCross = uz * vx - ux * vz;
+      final czCross = ux * vy - uy * vx;
+      surfaceAreaMm2 +=
+          0.5 *
+          math.sqrt(cxCross * cxCross + cyCross * cyCross + czCross * czCross);
     }
 
     final cx = (minX + maxX) / 2;
@@ -1558,8 +1987,14 @@ class _StlViewerScreenState extends State<_StlViewerScreen> {
     setState(() {
       _triangles = centered;
       _modelRadius = radius;
+      _totalTriangleCount = rawTriangles.length;
+      _volumeCm3 = signedVolumeMm3.abs() / 1000.0;
+      _areaCm2 = surfaceAreaMm2 / 100.0;
+      _dimX = dx;
+      _dimY = dy;
+      _dimZ = dz;
       _stats =
-          '${rawTriangles.length} Dreiecke · ${dx.toStringAsFixed(1)} × ${dz.toStringAsFixed(1)} × ${dy.toStringAsFixed(1)} mm';
+          '${rawTriangles.length} Δ · ${_volumeCm3.toStringAsFixed(2)} cm³ · ${dx.toStringAsFixed(1)}×${dz.toStringAsFixed(1)}×${dy.toStringAsFixed(1)} mm';
     });
   }
 
@@ -1586,14 +2021,43 @@ class _StlViewerScreenState extends State<_StlViewerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: const Color(0xFF0A0E17),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: const Color(0xFF131929),
         foregroundColor: Colors.white,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.fileName, style: const TextStyle(fontSize: 15)),
+            Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    widget.fileName,
+                    style: const TextStyle(fontSize: 15),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 1,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF00D4AA).withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text(
+                    'PRO',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF00D4AA),
+                    ),
+                  ),
+                ),
+              ],
+            ),
             Text(
               _stats,
               style: const TextStyle(fontSize: 11, color: Colors.white70),
@@ -1615,7 +2079,7 @@ class _StlViewerScreenState extends State<_StlViewerScreen> {
       body: Column(
         children: [
           Container(
-            color: const Color(0xFF1E293B),
+            color: const Color(0xFF131929),
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -1627,9 +2091,35 @@ class _StlViewerScreenState extends State<_StlViewerScreen> {
                   _buildToolBtn('Seite', () => _setView('side')),
                   const SizedBox(width: 6),
                   _buildToolBtn(
+                    'Solid',
+                    () => setState(() => _renderMode = 'solid'),
+                    active: _renderMode == 'solid',
+                  ),
+                  _buildToolBtn(
                     'Drahtgitter',
-                    () => setState(() => _wireframe = !_wireframe),
-                    active: _wireframe,
+                    () => setState(() => _renderMode = 'wireframe'),
+                    active: _renderMode == 'wireframe',
+                  ),
+                  _buildToolBtn(
+                    'Röntgen',
+                    () => setState(() => _renderMode = 'xray'),
+                    active: _renderMode == 'xray',
+                  ),
+                  _buildToolBtn(
+                    'Z-Höhe 🌈',
+                    () => setState(() => _renderMode = 'rainbow'),
+                    active: _renderMode == 'rainbow',
+                  ),
+                  _buildToolBtn(
+                    'Normalen',
+                    () => setState(() => _renderMode = 'normals'),
+                    active: _renderMode == 'normals',
+                  ),
+                  const SizedBox(width: 6),
+                  _buildToolBtn(
+                    'Maß-Box',
+                    () => setState(() => _showBBox = !_showBBox),
+                    active: _showBBox,
                   ),
                   _buildToolBtn(
                     'Gitter',
@@ -1637,54 +2127,110 @@ class _StlViewerScreenState extends State<_StlViewerScreen> {
                     active: _showGrid,
                   ),
                   const SizedBox(width: 8),
+                  _buildColorDot(const Color(0xFF00D4AA)),
                   _buildColorDot(const Color(0xFF38BDF8)),
-                  _buildColorDot(const Color(0xFF14B8A6)),
-                  _buildColorDot(const Color(0xFFCBD5E1)),
                   _buildColorDot(const Color(0xFFFB923C)),
+                  _buildColorDot(const Color(0xFFA78BFA)),
+                  _buildColorDot(const Color(0xFFCBD5E1)),
                 ],
               ),
             ),
           ),
           Expanded(
-            child: GestureDetector(
-              onScaleStart: (d) {
-                _baseZoom = _zoom;
-                _lastFocalPoint = d.focalPoint;
-              },
-              onScaleUpdate: (d) {
-                setState(() {
-                  if (d.pointerCount == 1) {
-                    final delta = d.focalPoint - _lastFocalPoint;
-                    _rotY += delta.dx * 0.01;
-                    _rotX = (_rotX + delta.dy * 0.01).clamp(
-                      -math.pi / 2,
-                      math.pi / 2,
-                    );
-                  } else {
-                    _zoom = (_baseZoom * d.scale).clamp(0.25, 6.0);
-                    _pan += d.focalPoint - _lastFocalPoint;
-                  }
-                  _lastFocalPoint = d.focalPoint;
-                });
-              },
-              child: CustomPaint(
-                size: Size.infinite,
-                painter: _StlPainter(
-                  triangles: _triangles,
-                  modelRadius: _modelRadius,
-                  rotX: _rotX,
-                  rotY: _rotY,
-                  zoom: _zoom,
-                  pan: _pan,
-                  wireframe: _wireframe,
-                  showGrid: _showGrid,
-                  baseColor: _modelColor,
+            child: Stack(
+              children: [
+                GestureDetector(
+                  onScaleStart: (d) {
+                    _baseZoom = _zoom;
+                    _lastFocalPoint = d.focalPoint;
+                  },
+                  onScaleUpdate: (d) {
+                    setState(() {
+                      if (d.pointerCount == 1) {
+                        final delta = d.focalPoint - _lastFocalPoint;
+                        _rotY += delta.dx * 0.01;
+                        _rotX = (_rotX + delta.dy * 0.01).clamp(
+                          -math.pi / 2,
+                          math.pi / 2,
+                        );
+                      } else {
+                        _zoom = (_baseZoom * d.scale).clamp(0.25, 6.0);
+                        _pan += d.focalPoint - _lastFocalPoint;
+                      }
+                      _lastFocalPoint = d.focalPoint;
+                    });
+                  },
+                  child: CustomPaint(
+                    size: Size.infinite,
+                    painter: _StlPainter(
+                      triangles: _triangles,
+                      modelRadius: _modelRadius,
+                      rotX: _rotX,
+                      rotY: _rotY,
+                      zoom: _zoom,
+                      pan: _pan,
+                      renderMode: _renderMode,
+                      showGrid: _showGrid,
+                      showBBox: _showBBox,
+                      dimX: _dimX,
+                      dimY: _dimY,
+                      dimZ: _dimZ,
+                      baseColor: _modelColor,
+                    ),
+                  ),
                 ),
-              ),
+                Positioned(
+                  left: 10,
+                  top: 10,
+                  child: IgnorePointer(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF131929).withValues(alpha: 0.82),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.white12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '📐 ${_dimX.toStringAsFixed(1)} × ${_dimZ.toStringAsFixed(1)} × ${_dimY.toStringAsFixed(1)} mm',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '🧊 Volumen: ${_volumeCm3.toStringAsFixed(2)} cm³  •  Oberfläche: ${_areaCm2.toStringAsFixed(1)} cm²',
+                            style: const TextStyle(
+                              color: Color(0xFF00D4AA),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '🔺 $_totalTriangleCount Dreiecke',
+                            style: const TextStyle(
+                              color: Colors.white60,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           Container(
-            color: const Color(0xFF1E293B),
+            color: const Color(0xFF131929),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             width: double.infinity,
             child: const Text(
@@ -1711,7 +2257,7 @@ class _StlViewerScreenState extends State<_StlViewerScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
-            color: active ? Colors.lightBlue.shade600 : const Color(0xFF334155),
+            color: active ? const Color(0xFF00A884) : const Color(0xFF232F46),
             borderRadius: BorderRadius.circular(6),
           ),
           child: Text(
@@ -1755,8 +2301,10 @@ class _StlPainter extends CustomPainter {
   final double rotY;
   final double zoom;
   final Offset pan;
-  final bool wireframe;
+  final String renderMode;
   final bool showGrid;
+  final bool showBBox;
+  final double dimX, dimY, dimZ;
   final Color baseColor;
 
   _StlPainter({
@@ -1766,8 +2314,12 @@ class _StlPainter extends CustomPainter {
     required this.rotY,
     required this.zoom,
     required this.pan,
-    required this.wireframe,
+    required this.renderMode,
     required this.showGrid,
+    required this.showBBox,
+    required this.dimX,
+    required this.dimY,
+    required this.dimZ,
     required this.baseColor,
   });
 
@@ -1809,7 +2361,19 @@ class _StlPainter extends CustomPainter {
     }
 
     final projected =
-        <({Offset p1, Offset p2, Offset p3, double zOrder, double shade})>[];
+        <
+          ({
+            Offset p1,
+            Offset p2,
+            Offset p3,
+            double zOrder,
+            double shade,
+            double avgY,
+            double nx,
+            double ny,
+            double nz,
+          })
+        >[];
 
     for (final t in triangles) {
       final x1 = t.v1x * cosY + t.v1z * sinY;
@@ -1840,6 +2404,10 @@ class _StlPainter extends CustomPainter {
         p3: Offset(cx + x3 * scale, cy - y3 * scale),
         zOrder: (zz1 + zz2 + zz3) / 3,
         shade: light,
+        avgY: (t.v1y + t.v2y + t.v3y) / 3,
+        nx: t.nx,
+        ny: t.ny,
+        nz: t.nz,
       ));
     }
 
@@ -1848,8 +2416,10 @@ class _StlPainter extends CustomPainter {
     final fillPaint = Paint()..style = PaintingStyle.fill;
     final wirePaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.7
-      ..color = wireframe ? baseColor : Colors.black26;
+      ..strokeWidth = 0.75
+      ..color = renderMode == 'wireframe' ? baseColor : Colors.black26;
+
+    final halfY = math.max(1.0, dimY / 2);
 
     for (final tri in projected) {
       final path = Path()
@@ -1858,7 +2428,30 @@ class _StlPainter extends CustomPainter {
         ..lineTo(tri.p3.dx, tri.p3.dy)
         ..close();
 
-      if (!wireframe) {
+      if (renderMode == 'wireframe') {
+        canvas.drawPath(path, wirePaint);
+      } else if (renderMode == 'xray') {
+        fillPaint.color = baseColor.withValues(alpha: 0.22 * tri.shade);
+        canvas.drawPath(path, fillPaint);
+      } else if (renderMode == 'rainbow') {
+        final tNorm = ((tri.avgY + halfY) / (2 * halfY)).clamp(0.0, 1.0);
+        final c = HSVColor.fromAHSV(
+          1.0,
+          (1.0 - tNorm) * 240.0,
+          0.85,
+          tri.shade,
+        ).toColor();
+        fillPaint.color = c;
+        canvas.drawPath(path, fillPaint);
+      } else if (renderMode == 'normals') {
+        fillPaint.color = Color.fromARGB(
+          255,
+          (((tri.nx * 0.5 + 0.5) * 255) * tri.shade).round().clamp(0, 255),
+          (((tri.ny * 0.5 + 0.5) * 255) * tri.shade).round().clamp(0, 255),
+          (((tri.nz * 0.5 + 0.5) * 255) * tri.shade).round().clamp(0, 255),
+        );
+        canvas.drawPath(path, fillPaint);
+      } else {
         fillPaint.color = Color.fromARGB(
           255,
           ((baseColor.r * 255) * tri.shade).round().clamp(0, 255),
@@ -1866,8 +2459,41 @@ class _StlPainter extends CustomPainter {
           ((baseColor.b * 255) * tri.shade).round().clamp(0, 255),
         );
         canvas.drawPath(path, fillPaint);
-      } else {
-        canvas.drawPath(path, wirePaint);
+      }
+    }
+
+    if (showBBox && dimX > 0) {
+      final hx = dimX / 2, hy = dimY / 2, hz = dimZ / 2;
+      final corners = [
+        project(-hx, -hy, -hz),
+        project(hx, -hy, -hz),
+        project(hx, -hy, hz),
+        project(-hx, -hy, hz),
+        project(-hx, hy, -hz),
+        project(hx, hy, -hz),
+        project(hx, hy, hz),
+        project(-hx, hy, hz),
+      ];
+      final edges = [
+        [0, 1],
+        [1, 2],
+        [2, 3],
+        [3, 0],
+        [4, 5],
+        [5, 6],
+        [6, 7],
+        [7, 4],
+        [0, 4],
+        [1, 5],
+        [2, 6],
+        [3, 7],
+      ];
+      final boxPaint = Paint()
+        ..color = const Color(0xFF00D4AA).withValues(alpha: 0.75)
+        ..strokeWidth = 1.2
+        ..style = PaintingStyle.stroke;
+      for (final e in edges) {
+        canvas.drawLine(corners[e[0]], corners[e[1]], boxPaint);
       }
     }
   }

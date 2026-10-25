@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:go_router/go_router.dart';
 import 'chats_settings_provider.dart';
 import '../../auth/presentation/auth_provider.dart';
 
@@ -187,6 +188,26 @@ class ChatsSettingsScreen extends ConsumerWidget {
                               ),
                             ],
                           ],
+                        ),
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF00A884),
+                              side: const BorderSide(color: Color(0xFF00A884), width: 1.5),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onPressed: () => context.push('/assistant'),
+                            icon: const Icon(Icons.auto_awesome, size: 18),
+                            label: const Text(
+                              '✨ Mit KI-Assistent Hintergrund generieren',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
                         ),
                       ],
                     ),

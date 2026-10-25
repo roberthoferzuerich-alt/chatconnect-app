@@ -29,6 +29,7 @@ import '../features/story/presentation/create_story_screen.dart';
 import '../features/story/presentation/story_viewer_screen.dart';
 import '../features/story/presentation/my_stories_screen.dart';
 import '../features/story/domain/story_model.dart';
+import '../features/assistant/presentation/assistant_image_generator_screen.dart';
 
 final rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -159,6 +160,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/my_stories',
         builder: (context, state) =>
             MyStoriesScreen(storyGroup: state.extra as UserStoryGroup),
+      ),
+      GoRoute(
+        path: '/assistant',
+        builder: (context, state) {
+          final targetConvoId = state.extra is int ? state.extra as int : null;
+          return AssistantImageGeneratorScreen(targetConversationId: targetConvoId);
+        },
       ),
       GoRoute(
         path: '/chat/:id',

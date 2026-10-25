@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../data/chat_repository.dart';
 import '../domain/conversation_model.dart';
 import '../domain/message_model.dart';
@@ -33,7 +34,81 @@ class ConversationsNotifier extends AsyncNotifier<List<Conversation>> {
   }
 }
 
-final archivedChatIdsProvider = StateProvider<Set<int>>((ref) => {});
+class ArchivedChatIdsNotifier extends StateNotifier<Set<int>> {
+  static const _prefsKey = 'cc_archived_chat_ids_v1';
+
+  ArchivedChatIdsNotifier() : super(<int>{}) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final list = prefs.getStringList(_prefsKey) ?? const [];
+      state = list.map((s) => int.tryParse(s)).whereType<int>().toSet();
+    } catch (_) {}
+  }
+
+  Future<void> _save(Set<int> ids) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(
+        _prefsKey,
+        ids.map((id) => id.toString()).toList(),
+      );
+    } catch (_) {}
+  }
+
+  Set<int> update(Set<int> Function(Set<int> state) cb) {
+    final next = cb(state);
+    state = next;
+    _save(next);
+    return next;
+  }
+}
+
+final archivedChatIdsProvider =
+    StateNotifierProvider<ArchivedChatIdsNotifier, Set<int>>(
+      (ref) => ArchivedChatIdsNotifier(),
+    );
+
+class StarredMessageIdsNotifier extends StateNotifier<Set<int>> {
+  static const _prefsKey = 'cc_starred_msg_ids_v1';
+
+  StarredMessageIdsNotifier() : super(<int>{}) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final list = prefs.getStringList(_prefsKey) ?? const [];
+      state = list.map((s) => int.tryParse(s)).whereType<int>().toSet();
+    } catch (_) {}
+  }
+
+  Future<void> toggle(int messageId) async {
+    final next = Set<int>.from(state);
+    if (next.contains(messageId)) {
+      next.remove(messageId);
+    } else {
+      next.add(messageId);
+    }
+    state = next;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(
+        _prefsKey,
+        next.map((id) => id.toString()).toList(),
+      );
+    } catch (_) {}
+  }
+}
+
+final starredMessageIdsProvider =
+    StateNotifierProvider<StarredMessageIdsNotifier, Set<int>>(
+      (ref) => StarredMessageIdsNotifier(),
+    );
 
 final callsProvider = FutureProvider<List<CallRecord>>((ref) async {
   final repo = ref.read(chatRepositoryProvider);
@@ -76,6 +151,20 @@ class MessagesNotifier extends StateNotifier<AsyncValue<List<Message>>> {
     super.dispose();
   }
 
+  String _messagesSignature(List<Message> list) {
+    final sb = StringBuffer();
+    for (final m in list) {
+      sb.write('${m.id}:${m.readAt != null ? 1 : 0}:');
+      for (final r in m.reactions) {
+        if (r is Map) {
+          sb.write('${r['user_id']}_${r['reaction']},');
+        }
+      }
+      sb.write(';');
+    }
+    return sb.toString();
+  }
+
   Future<void> _pollNewMessages() async {
     if (!mounted) return;
     try {
@@ -83,11 +172,14 @@ class MessagesNotifier extends StateNotifier<AsyncValue<List<Message>>> {
       if (!mounted) return;
       if (state.hasValue) {
         final currentMsgs = state.value!;
-        if (msgs.length != currentMsgs.length ||
-            (msgs.isNotEmpty &&
-                currentMsgs.isNotEmpty &&
-                msgs.last.id != currentMsgs.last.id)) {
+        if (_messagesSignature(msgs) != _messagesSignature(currentMsgs)) {
           state = AsyncValue.data(msgs);
+          final hasUnreadFromOther = msgs.any(
+            (m) => m.senderId != _currentUserId && m.readAt == null,
+          );
+          if (hasUnreadFromOther) {
+            _repo.markAsRead(_conversationId).catchError((_) {});
+          }
         }
       }
     } catch (_) {}
