@@ -1,101 +1,101 @@
 const String appUserGuideMarkdown = '''
 # 📖 ChatConnect Benutzerhandbuch & Anleitung
 
-Willkommen bei **ChatConnect**, deinem sicheren und modernen Messenger für Familie und Freunde! Diese Anleitung erklärt dir Schritt für Schritt alle Funktionen auf dem **Tablet/Smartphone (Android-App)** sowie auf dem **Laptop/PC (WebApp)**.
+Willkommen bei **ChatConnect**, deinem sicheren und vielseitigen Messenger für Familie und Freunde! Diese Anleitung erklärt dir Schritt für Schritt alle Funktionen auf dem **Smartphone/Tablet (Android-App)** sowie auf dem **Laptop/PC (WebApp)**.
 
 ---
 
-## 1. Erste Schritte & Profil
+## 1. Erste Schritte, Profil & Eigener Datei-Chat
 
 ### Profil anpassen
-- Tippe oben rechts auf das **Drei-Punkte-Menü** ➔ **Einstellungen** ➔ **Profil bearbeiten** (oder tippe direkt auf dein Profilbild oben links).
+- Tippe oben rechts auf das **Drei-Punkte-Menü (⋮)** ➔ **Einstellungen** ➔ **Profil bearbeiten** (oder direkt auf dein Profilbild oben links).
 - Hier kannst du deinen **Anzeigenamen**, deine **Info (Status)** und dein **Profilbild** ändern.
 
-### Neuen Chat starten
-- Tippe auf das runde, grüne/blaue **Stift-Symbol** unten rechts auf der Hauptseite.
-- Wähle den gewünschten Kontakt aus der Liste aus, um den Chat sofort zu öffnen.
+### Eigener Notiz- & Datei-Chat „(Ich / Eigene Dateien)“
+- In der Kontaktliste findest du deinen eigenen Kontakt mit dem Hinweis **„(Ich / Eigene Dateien)“**.
+- Ideal, um dir selbst aus der Schule oder von unterwegs **3D-Modelle (`.stl` / `.ctl`)**, **Minecraft-Mods (`.jar`)**, **ZIP-Archive**, **Markdown-Dokumente (`.md`)**, PDFs oder Notizen nach Hause zu schicken.
 
 ---
 
-## 2. Nachrichten schreiben & Emojis
+## 2. Nachrichten, Emojis & Dokumente (bis 500 MB)
 
-- Tippe deine Nachricht in das Textfeld am unteren Rand ein und tippe auf den **Senden-Pfeil**.
-- Über das **Smiley-Symbol** links neben dem Textfeld kannst du Emojis einfügen.
-- Eintreffende Nachrichten erscheinen dank Live-Aktualisierung sofort in Echtzeit mit einem angenehmen Hinweiston.
-
----
-
-## 3. Sprachnachrichten aufnehmen & senden 🎤
-
-### In der App (Tablet/Handy):
-1. **Aufnehmen:** Drücke und halte das **Mikrofon-Symbol** unten rechts gedrückt, während du sprichst.
-2. **Senden:** Lasse das Mikrofon los, sobald du fertig gesprochen hast – die Sprachnachricht wird sofort verschickt.
-
-### In der WebApp (Laptop/Browser):
-1. **Aufnehmen:** Klicke einmal auf das **Mikrofon-Symbol** neben dem Textfeld.
-2. **Aufnahmeleiste:** Eine rote Leiste mit Timer zeigt dir die laufende Aufnahme an.
-3. **Senden:** Klicke auf den grünen Pfeil zum Senden (oder auf den roten Papierkorb zum Abbrechen).
-
-### Abspielen:
-- Jede Sprachnachricht enthält einen Player. Tippe einfach auf **Play (▶)** zum Anhören.
+- Tippe deine Nachricht in das Textfeld am unteren Rand ein und drücke **Enter** oder tippe auf den **grünen Senden-Pfeil**.
+- Über das **Smiley-Symbol (😊)** links neben dem Textfeld kannst du Emojis aus allen Kategorien oder per Stichwortsuche einfügen.
+- Über das **Dokument-Symbol (📄)** versendest du Dateien bis **500 MB** (`PDF`, `Word`, `Excel`, `ZIP`, `7-Zip`, Minecraft-Mods `.jar`, `.mcpack`, `.mcworld`, Markdown `.md` sowie 3D-Modelle `.stl` / `.ctl`).
 
 ---
 
-## 4. Bilder aufnehmen, zuschneiden & teilen 📷
+## 3. Interaktive Chat-Funktionen: Reaktionen, Antworten, Favoriten & Suche 💬
 
-1. Tippe auf das **Büroklammer- oder Foto-Symbol** neben dem Textfeld.
-2. Wähle ein Foto aus deiner Galerie oder nimm ein neues Foto mit der Kamera auf.
-3. Im Zuschneide-Fenster kannst du das Bild drehen, zoomen und den Ausschnitt festlegen.
-4. Tippe auf **„Bild senden“**, um das Foto optimal formatiert zu übertragen.
+### 😊 Emoji-Reaktionen & ↩️ Antworten (Zitieren)
+- **WebApp:** Fahre mit der Maus über eine Nachricht. Oben rechts erscheint eine Aktionsleiste:
+  - **😊 Reagieren:** Wähle `👍`, `❤️`, `😂`, `😮`, `🎉` oder `🔥`. Die Reaktionen erscheinen als anklickbare Badges direkt unter der Nachricht.
+  - **↩️ Antworten:** Zitiert die ausgewählte Nachricht über dem Texteingabefeld und stellt das Zitat beim Senden als übersichtliche Zitat-Box dar.
+  - **★ Mit Stern markieren:** Speichert wichtige Nachrichten, 3D-Modelle oder Links in deiner Favoritenliste (**3-Punkte-Menü ➔ Mit Stern markiert**), inklusive Suchfunktion und direktem **„Springen“**-Button.
+- **Android-App:** Drücke **lange mit dem Finger** auf eine Nachricht, um mit Emojis zu reagieren oder sie zu löschen.
 
----
-
-## 5. Nachrichten für alle löschen 🗑️
-
-Jeder Teilnehmer kann Nachrichten sauber aus dem Chat entfernen:
-
-### Auf dem Tablet/Handy (Android-App):
-1. Drücke **lange mit dem Finger** auf die gewünschte Nachricht (Text, Bild oder Sprachnachricht).
-2. Es öffnet sich unten ein Menü.
-3. Tippe auf den roten Eintrag **„Löschen“**. Die Nachricht wird sofort für alle gelöscht.
-
-### Auf dem Laptop (WebApp im Browser):
-1. Oben rechts an jeder Sprechblase siehst du ein kleines **Mülleimer-Symbol**.
-2. Klicke darauf und bestätige die Abfrage – die Nachricht verschwindet unmittelbar.
+### 🔍 Volltextsuche im geöffneten Chat & Schnellfilter
+- **Suche im Chat:** Klicke oben rechts im Chat-Header auf die **Lupe (🔍)** (oder drücke `Strg + F`), um im geöffneten Chat nach Texten, `.stl`-, `.jar`-, `.zip`- oder `.md`-Dateien zu suchen und mit `▲` / `▼` von Treffer zu Treffer zu springen.
+- **Schnellfilter in der Seitenleiste:** Filtere deine Konversationen mit 1 Klick nach **Alle**, **Ungelesen**, **Gruppen** oder **Eigene Dateien**.
 
 ---
 
-## 6. Sprach- & Videoanrufe 📞 📹
+## 4. Integrierter Markdown-Viewer (`.md`) & 3D-STLViewer Pro Edition 🧊
 
-1. Öffne den Chat mit deinem Kontakt.
-2. Tippe oben rechts auf:
-   - **Telefonhörer (📞)** für einen Sprachanruf.
-   - **Videokamera (📹)** für einen Videoanruf mit Live-Bild.
-3. Das Telefon klingelt beim Partner auch bei gesperrtem Bildschirm zuverlässig.
+### 📖 Markdown-Viewer (`.md`)
+- Empfangene `.md`-Dateien erhalten ein violettes **MD**-Badge.
+- Klicke auf **„Im Markdown-Viewer öffnen“**, um Handbücher, Dokumentationen und Tabellen direkt in ChatConnect formatiert zu lesen (auf Wunsch auch als PDF druckbar).
 
----
-
-## 7. Chat-Hintergrundbild (Wallpaper) 🎨
-
-1. Öffne das Drei-Punkte-Menü (oder die Einstellungen) ➔ **„Chat-Hintergrundbild“**.
-2. Wähle eine der Vorlagen (*Neon Waves*, *Cyber Mesh*) oder lade ein eigenes Bild hoch.
-
----
-
-## 8. Storys (Status-Updates für 24 Stunden) 📸
-
-- **Story ansehen:** Wechsle zum Reiter **„Storys“**. Tippe auf das Bild eines Kontakts, um seine Tages-Highlights zu sehen.
-- **Eigene Story teilen:** Tippe auf **„Meine Story“** (oder das Plus an deinem Bild), wähle ein Foto aus und teile es.
+### 🧊 3D-STLViewer Pro Edition & 3D-Generator (`.stl` / `.ctl`)
+- Klicke bei einer `.stl`- oder `.ctl`-Datei im Chat auf **„Im 3D-STL-Browser öffnen“** oder lade über das Dokument-Symbol beliebig große lokale `.stl`-Dateien direkt von deiner Festplatte (ohne Größenlimit!).
+- **Funktionen des 3D-Viewers:**
+  - *Render-Modi:* Geglättet (Gouraud), Flach (Facettiert), Drahtgitter (Wireframe) und **Röntgen (X-Ray)**.
+  - *Materialien:* CAD-Blau, Smaragd-Türkis, Titanium Silber, Gold Metallic, Kupfer, Obsidian, **Regenbogen (Z-Höhe)** und **Normalen-Farben (XYZ)**.
+  - *Präzise Analyse:* Dreiecke, Eckpunkte, Maße (`X × Y × Z` in mm), **Volumen (`cm³`)** und **Oberfläche (`cm²`)**.
+  - *Werkzeuge:* Bodenraster, 3D-Achsen-Kompass, Bounding-Box, Kamera-Licht, Auto-Rotation, Objekt-Zentrierung und **PNG-Screenshot-Export**.
+- **✨ 3D-Modell-Generator:** Über den **`3D`-Button** unten in der Chat-Leiste kannst du per Textbeschreibung (z. B. *„Mittelschnauzer liegend“*, *„Anhänger ROBI“*, *„Zahnrad 20 Zähne“*, *„Rakete“*, *„Ritterburg“*) eigene 3D-Modelle erzeugen und direkt in den Chat senden!
 
 ---
 
-## 9. Chats organisieren & archivieren 🗂️
+## 5. KI-Bildgenerator, Cropper & Web-Größen-Studio 🎨
 
-- **Archivieren:** Wische einen Chat in der Liste nach **rechts** (blauer Hintergrund).
-- **Archiv öffnen:** Drei-Punkte-Menü ➔ **„Archivierte Chats“**.
-- **Chat löschen:** Wische einen Chat nach **links** (roter Hintergrund).
+- Öffne über das **✨ Funken-Symbol** oder das **3-Punkte-Menü (⋮)** den **KI-Bildgenerator** im edlen 2-Karten-Design:
+  - **Linke Karte:** Eigenes Bild hochladen (oder per Drag & Drop ablegen) sowie Live-Vorschau des generierten KI-Bildes.
+  - **Rechte Karte:** Beschreibung in beliebiger Sprache eingeben + Auswahl von **KI-Modell** (*Flux Pro*, *Flux Realism*, *Turbo Speed*, *3D & Gaming*), **Style** (*Fotorealistisch*, *3D-Render*, *Minecraft / Voxel*, *Anime / Comic*, *Cyberpunk*, *Ölgemälde*), **Format** (`1:1`, `16:9`, `9:16`) und **Auflösung** (`1K`, `HD`, `2K`).
+- **✂️ Bild zuschneiden (Cropper):** Schneide Bilder frei oder in festen Formaten (`1:1`, `16:9`, `4:3`, `9:16`) zu und drehe sie um `90°`.
+- **📐 Auf Web-Größe skalieren:** Optimiere Bilder mit 1 Klick auf **Full HD (`1920×1080`)**, **Web Standard (`1200×675`)**, **Chat (`800×800`)** oder **Avatar (`400×400`)** im speichersparenden WebP-, JPEG- oder PNG-Format.
+- **Direkt-Aktionen:** Sende das fertige Bild direkt in den geöffneten Chat, übernimm es als Chat-Hintergrund oder speichere es lokal.
 
 ---
 
-Viel Freude mit ChatConnect!
+## 6. Edle Bild-Lightbox & ZIP / Minecraft-`.jar` Inhalts-Inspektor 🖼️📦
+
+- **🖼️ Vollbild-Lightbox im Chat:** Ein Klick auf ein Bild im Chat öffnet die Vollbild-Lightbox mit stufenlosem **Mausrad-Zoom (`50% – 400%`)**, **`‹` / `›` Galerie-Navigation** durch alle Bilder im Chat, Direkt-Download und einem Button **„✨ Im KI-Studio bearbeiten / skalieren“**.
+- **📦 ZIP- & Minecraft-`.jar` Inhalts-Inspektor:** Klicke bei `.zip`-, `.jar`-, `.mcpack`-, `.mcworld`-, `.mcaddon`- oder `.3mf`-Dateien auf **„📦 Archiv-Inhalt & Mod-Infos ansehen“**, um alle enthaltenen Dateien, Größen, Minecraft-Mod-Infos (`fabric.mod.json`, `mods.toml`, `pack.mcmeta`) und Textdateien direkt im Browser zu prüfen.
+
+---
+
+## 7. Sprachnachrichten aufnehmen & senden 🎤
+
+- **In der Android-App:** Halte das **Mikrofon-Symbol** unten rechts gedrückt, während du sprichst, und lasse es zum Senden los.
+- **In der WebApp:** Klicke auf das **Mikrofon** neben dem Textfeld. Klicke danach auf den grünen Pfeil zum Senden (oder den Papierkorb zum Abbrechen).
+
+---
+
+## 8. Sprach- & Videoanrufe 📞 📹
+
+- Öffne einen Chat und tippe oben rechts auf den **Telefonhörer (📞)** für einen Sprachanruf oder die **Videokamera (📹)** für einen Videoanruf.
+- Dank Push-Benachrichtigung klingelt das Smartphone des Partners auch im Standby zuverlässig.
+
+---
+
+## 9. App-Sperre (PIN-Schutz), Hintergrundbilder & Schriftgröße 🔒🎨
+
+- **🔒 App-Sperre (PIN):** Im 3-Punkte-Menü kannst du unter **„App-Sperre (PIN)“** einen 4-stelligen PIN-Code einrichten und deinen Bildschirm jederzeit mit einem Klick vor neugierigen Blicken schützen.
+- **🎨 Chat-Hintergrundbild & 🔠 Schriftgröße:** Wähle aus coolen Design-Vorlagen oder eigenen Fotos und passe die Chat-Schriftgröße stufenlos (`12 px` bis `24 px`) an.
+- **✅ Alle als gelesen markieren:** Setzt über das 3-Punkte-Menü mit einem Klick alle ungelesenen Nachrichten in sämtlichen Chats auf gelesen.
+
+---
+
+Viel Freude mit ChatConnect! 🚀
 ''';

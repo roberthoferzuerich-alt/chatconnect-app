@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/widgets/app_avatar.dart';
 import '../../auth/presentation/auth_provider.dart';
 import '../data/chat_repository.dart';
@@ -70,6 +69,11 @@ class ChatListScreen extends ConsumerWidget {
         actions: [
           const Center(child: ConnectionIndicator()),
           IconButton(
+            icon: const Icon(Icons.auto_awesome, color: Color(0xFF00A884)),
+            tooltip: 'ChatConnect-Assistent (KI-Bildgenerator)',
+            onPressed: () => context.push('/assistant'),
+          ),
+          IconButton(
             icon: const Icon(Icons.search),
             onPressed: () => context.push('/search'),
           ),
@@ -100,11 +104,26 @@ class ChatListScreen extends ConsumerWidget {
                 showChatFontSizeDialog(context);
               } else if (value == 'user_guide') {
                 context.push('/user_guide');
+              } else if (value == 'assistant') {
+                context.push('/assistant');
               } else if (value == 'settings') {
                 context.push('/settings');
               }
             },
             itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'assistant',
+                child: Row(
+                  children: [
+                    Icon(Icons.auto_awesome, color: Color(0xFF00A884), size: 20),
+                    SizedBox(width: 10),
+                    Text(
+                      'KI-Bildgenerator',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00A884)),
+                    ),
+                  ],
+                ),
+              ),
               const PopupMenuItem(
                 value: 'new_group',
                 child: Text('Neue Gruppe'),

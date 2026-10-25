@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
+import 'dart:typed_data';
 import 'package:app/features/chat/data/chat_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -181,6 +182,25 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       builder: (context) => SafeArea(
         child: Wrap(
           children: [
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF00A884).withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.auto_awesome, color: Color(0xFF00A884)),
+              ),
+              title: const Text(
+                '✨ KI-Bildgenerator (Assistent)',
+                style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00A884)),
+              ),
+              subtitle: const Text('Bild per KI erstellen & direkt hierher senden'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/assistant', extra: widget.conversationId);
+              },
+            ),
             ListTile(
               leading: const Icon(Icons.camera_alt, color: Colors.teal),
               title: const Text('Kamera'),
