@@ -522,18 +522,17 @@ class _AssistantImageGeneratorScreenState
 
                       // Die beiden weißen Karten (Left: Upload/Preview, Right: Prompt & Options)
                       if (isWide)
-                        IntrinsicHeight(
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Expanded(flex: 5, child: _buildLeftCard()),
-                              const SizedBox(width: 24),
-                              Expanded(flex: 7, child: _buildRightCard()),
-                            ],
-                          ),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(flex: 5, child: _buildLeftCard()),
+                            const SizedBox(width: 24),
+                            Expanded(flex: 7, child: _buildRightCard()),
+                          ],
                         )
                       else
                         Column(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             _buildLeftCard(),
                             const SizedBox(height: 20),
@@ -702,6 +701,7 @@ class _AssistantImageGeneratorScreenState
       ),
       padding: const EdgeInsets.all(20),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Header der linken Karte
@@ -759,7 +759,8 @@ class _AssistantImageGeneratorScreenState
           const SizedBox(height: 14),
 
           // Content Bereich: Entweder Bildvorschau oder gestrichelter Upload-Bereich
-          Expanded(
+          SizedBox(
+            height: 290,
             child: _currentImageBytes != null
                 ? _buildImagePreview()
                 : _buildEmptyUploadArea(),
@@ -907,6 +908,7 @@ class _AssistantImageGeneratorScreenState
       ),
       padding: const EdgeInsets.all(20),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Großes Textfeld mit Info-Icon rechts oben
@@ -914,8 +916,8 @@ class _AssistantImageGeneratorScreenState
             children: [
               TextField(
                 controller: _promptController,
-                minLines: 4,
-                maxLines: 6,
+                minLines: 6,
+                maxLines: 8,
                 decoration: InputDecoration(
                   hintText: 'Beschreibe in einer beliebigen Sprache, welches Bild du erstellen möchtest …',
                   hintStyle: TextStyle(
@@ -968,7 +970,7 @@ class _AssistantImageGeneratorScreenState
             ),
           ),
 
-          const Spacer(),
+          const SizedBox(height: 20),
 
           // Untere Auswahl-Leiste genau wie im Bild
           _buildPixellaBottomControlBar(),
