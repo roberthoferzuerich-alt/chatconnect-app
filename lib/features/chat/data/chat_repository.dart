@@ -123,6 +123,17 @@ class ChatRepository {
     return Message.fromJson(response.data);
   }
 
+  Future<Message> forwardMessage(
+    int messageId,
+    int targetConversationId,
+  ) async {
+    final response = await _dio.post(
+      'messages/$messageId/forward',
+      data: {'target_conversation_id': targetConversationId},
+    );
+    return Message.fromJson(response.data);
+  }
+
   Future<List<User>> syncContacts(List<String> phones) async {
     final response = await _dio.post(
       'users/sync-contacts',

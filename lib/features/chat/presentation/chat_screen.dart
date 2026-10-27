@@ -249,6 +249,30 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               },
             ),
             ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.poll_outlined, color: Colors.amber.shade800),
+              ),
+              title: Text(
+                '📊 Interaktive Umfrage erstellen',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.amber.shade900,
+                ),
+              ),
+              subtitle: const Text(
+                'Frage & Antwortoptionen zum Live-Abstimmen im Chat senden',
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _showCreatePollDialog();
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.camera_alt, color: Colors.teal),
               title: const Text('Kamera'),
               onTap: () {
@@ -540,6 +564,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   void _showMessageOptions(Message msg, bool isMe, String senderName) {
     final isStarred = ref.read(starredMessageIdsProvider).contains(msg.id);
+    final isPinned =
+        ref.read(pinnedMessagesProvider)[widget.conversationId] == msg.id;
     showModalBottomSheet(
       context: context,
       builder: (context) => SafeArea(
@@ -575,6 +601,43 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   _replyingToSender = senderName;
                 });
                 _focusNode.requestFocus();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.forward, color: Colors.teal),
+              title: const Text('Nachricht / Datei weiterleiten ↪️'),
+              onTap: () {
+                Navigator.pop(context);
+                _showForwardMessageDialog(msg);
+              },
+            ),
+            ListTile(
+              leading: Icon(
+                isPinned ? Icons.push_pin : Icons.push_pin_outlined,
+                color: Colors.amber.shade800,
+              ),
+              title: Text(
+                isPinned
+                    ? 'Anpinnen oben im Chat aufheben 📌'
+                    : 'Oben im Chat anpinnen 📌',
+              ),
+              onTap: () async {
+                Navigator.pop(context);
+                final nowPinned = await ref
+                    .read(pinnedMessagesProvider.notifier)
+                    .togglePin(widget.conversationId, msg.id);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        nowPinned
+                            ? '📌 Nachricht oben im Chat angepinnt'
+                            : '📌 Anpinnen aufgehoben',
+                      ),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                }
               },
             ),
             ListTile(
@@ -702,6 +765,772 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               }
             },
             child: const Text('Speichern'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCreatePollDialog() {
+    final questionCtrl = TextEditingController();
+    final optionCtrls = <TextEditingController>[
+      TextEditingController(),
+      TextEditingController(),
+      TextEditingController(),
+    ];
+    final pollEmojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣'];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF0F172A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          void applyPreset(String q, List<String> opts) {
+            questionCtrl.text = q;
+            while (optionCtrls.length < opts.length) {
+              optionCtrls.add(TextEditingController());
+            }
+            for (var i = 0; i < optionCtrls.length; i++) {
+              optionCtrls[i].text = i < opts.length ? opts[i] : '';
+            }
+            setSheetState(() {});
+          }
+
+          return Padding(
+            padding: EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 18,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.poll, color: Colors.amber),
+                      ),
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '📊 Interaktive Umfrage erstellen',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            Text(
+                              'Echtzeit-Abstimmung zwischen WebApp & Android-App',
+                              style: TextStyle(
+                                color: Colors.white60,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      ActionChip(
+                        backgroundColor: const Color(0xFF1E293B),
+                        label: const Text(
+                          '📅 Termin',
+                          style: TextStyle(color: Colors.white, fontSize: 11),
+                        ),
+                        onPressed: () => applyPreset(
+                          'Wann passt euch das nächste Treffen am besten?',
+                          [
+                            'Freitag Abend (19:00 Uhr)',
+                            'Samstag Nachmittag',
+                            'Sonntag gemütlich',
+                          ],
+                        ),
+                      ),
+                      ActionChip(
+                        backgroundColor: const Color(0xFF1E293B),
+                        label: const Text(
+                          '🍕 Essen',
+                          style: TextStyle(color: Colors.white, fontSize: 11),
+                        ),
+                        onPressed: () => applyPreset(
+                          'Was bestellen wir heute zum Essen?',
+                          [
+                            '🍕 Pizza & Pasta',
+                            '🍔 Burger & Pommes',
+                            '🍣 Asiatisch / Sushi',
+                          ],
+                        ),
+                      ),
+                      ActionChip(
+                        backgroundColor: const Color(0xFF1E293B),
+                        label: const Text(
+                          '🧊 3D-Farbe',
+                          style: TextStyle(color: Colors.white, fontSize: 11),
+                        ),
+                        onPressed: () => applyPreset(
+                          'In welcher Filament-Farbe soll das 3D-Modell gedruckt werden?',
+                          [
+                            '⚫ Anthrazit / Schwarz (PLA)',
+                            '⚪ Weiß / Silber (PETG)',
+                            '🟢 Smaragdgrün / Türkis',
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: questionCtrl,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      labelText: 'Frage oder Thema der Umfrage',
+                      labelStyle: const TextStyle(color: Colors.white70),
+                      filled: true,
+                      fillColor: const Color(0xFF1E293B),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  ...List.generate(optionCtrls.length, (i) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        children: [
+                          Text(
+                            pollEmojis[i],
+                            style: const TextStyle(fontSize: 18),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextField(
+                              controller: optionCtrls[i],
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: 'Antwort-Option ${i + 1}',
+                                hintStyle: const TextStyle(
+                                  color: Colors.white38,
+                                ),
+                                isDense: true,
+                                filled: true,
+                                fillColor: const Color(0xFF1E293B),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                  if (optionCtrls.length < 5)
+                    TextButton.icon(
+                      onPressed: () {
+                        setSheetState(() {
+                          optionCtrls.add(TextEditingController());
+                        });
+                      },
+                      icon: const Icon(
+                        Icons.add,
+                        color: Color(0xFF00D4AA),
+                        size: 18,
+                      ),
+                      label: const Text(
+                        'Weitere Option hinzufügen (max. 5)',
+                        style: TextStyle(
+                          color: Color(0xFF00D4AA),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF00A884),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                      ),
+                      icon: const Icon(Icons.send),
+                      label: const Text('Umfrage in Chat senden'),
+                      onPressed: () async {
+                        final q = questionCtrl.text.trim();
+                        final opts = optionCtrls
+                            .map((c) => c.text.trim())
+                            .where((t) => t.isNotEmpty)
+                            .toList();
+                        if (q.isEmpty || opts.length < 2) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Bitte eine Frage und mindestens 2 Optionen eingeben.',
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+                        Navigator.pop(ctx);
+                        final lines = <String>['📊 [UMFRAGE] $q'];
+                        for (var i = 0; i < opts.length && i < 5; i++) {
+                          lines.add('${pollEmojis[i]} ${opts[i]}');
+                        }
+                        await ref
+                            .read(
+                              messagesProvider(widget.conversationId).notifier,
+                            )
+                            .sendMessage(lines.join('\n'));
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showForwardMessageDialog(Message msg) {
+    final convos = ref.read(conversationsProvider).value ?? const [];
+    final currentUser = ref.read(authStateProvider).value;
+    String searchFilter = '';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          final filtered = convos.where((c) {
+            if (searchFilter.isEmpty) return true;
+            final other = c.users
+                .where((u) => u.id != currentUser?.id)
+                .firstOrNull;
+            final label = c.isGroup
+                ? (c.name ?? 'Gruppe')
+                : (other?.name ??
+                      '${currentUser?.name ?? "Ich"} (Ich / Eigene Dateien)');
+            return label.toLowerCase().contains(searchFilter.toLowerCase());
+          }).toList();
+
+          return SafeArea(
+            child: Padding(
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 16,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 14,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.forward, color: Color(0xFF00A884)),
+                      SizedBox(width: 8),
+                      Text(
+                        '↪️ Nachricht / Datei weiterleiten an...',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Kontakt oder Gruppe suchen...',
+                      prefixIcon: const Icon(Icons.search, size: 18),
+                      isDense: true,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onChanged: (v) => setSheetState(() => searchFilter = v),
+                  ),
+                  const SizedBox(height: 10),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 320),
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: filtered.length,
+                      itemBuilder: (context, idx) {
+                        final targetConvo = filtered[idx];
+                        final other = targetConvo.users
+                            .where((u) => u.id != currentUser?.id)
+                            .firstOrNull;
+                        final isSelf = !targetConvo.isGroup && other == null;
+                        final title = targetConvo.isGroup
+                            ? (targetConvo.name ?? 'Gruppe')
+                            : (isSelf
+                                  ? '${currentUser?.name ?? "Ich"} (Ich / Eigene Dateien)'
+                                  : (other?.name ?? 'Unbekannt'));
+                        return ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: isSelf
+                                ? Colors.teal.shade700
+                                : const Color(0xFF00A884),
+                            child: Icon(
+                              targetConvo.isGroup
+                                  ? Icons.group
+                                  : (isSelf ? Icons.folder_special : Icons.person),
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                          ),
+                          title: Text(
+                            title,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                          subtitle: Text(
+                            isSelf
+                                ? 'In persönlicher Ablage speichern'
+                                : (targetConvo.isGroup
+                                      ? 'Gruppenchat'
+                                      : 'Direktnachricht'),
+                            style: const TextStyle(fontSize: 11),
+                          ),
+                          trailing: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF00A884),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                            ),
+                            icon: const Icon(Icons.send, size: 14),
+                            label: const Text(
+                              'Senden',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                            onPressed: () async {
+                              Navigator.pop(ctx);
+                              try {
+                                await ref
+                                    .read(chatRepositoryProvider)
+                                    .forwardMessage(msg.id, targetConvo.id);
+                                ref.invalidate(
+                                  messagesProvider(targetConvo.id),
+                                );
+                                ref.invalidate(conversationsProvider);
+                                if (!mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      '↪️ Weitergeleitet an $title',
+                                    ),
+                                    action: targetConvo.id !=
+                                            widget.conversationId
+                                        ? SnackBarAction(
+                                            label: 'Chat öffnen',
+                                            onPressed: () {
+                                              context.pushReplacement(
+                                                '/chat/${targetConvo.id}',
+                                              );
+                                            },
+                                          )
+                                        : null,
+                                  ),
+                                );
+                              } catch (e) {
+                                if (!mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Weiterleiten fehlgeschlagen: $e',
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showChatMediaGallerySheet(List<Message> allMessages) {
+    final photos = allMessages.where((m) => m.imageUrl != null).toList();
+    final stlFiles = allMessages.where((m) {
+      final name = (m.fileName ?? m.fileUrl ?? '').toLowerCase();
+      return m.fileUrl != null &&
+          (name.endsWith('.stl') || name.endsWith('.ctl'));
+    }).toList();
+    final docs = allMessages.where((m) {
+      final name = (m.fileName ?? m.fileUrl ?? '').toLowerCase();
+      return m.fileUrl != null &&
+          !(name.endsWith('.stl') || name.endsWith('.ctl'));
+    }).toList();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (ctx) => DefaultTabController(
+        length: 3,
+        child: SizedBox(
+          height: MediaQuery.of(ctx).size.height * 0.72,
+          child: Column(
+            children: [
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.perm_media,
+                      color: Color(0xFF00A884),
+                      size: 22,
+                    ),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        '🗂️ Medien, Dokumente & 3D-Modelle',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+              ),
+              TabBar(
+                labelColor: const Color(0xFF00A884),
+                indicatorColor: const Color(0xFF00A884),
+                tabs: [
+                  Tab(text: '📷 Fotos (${photos.length})'),
+                  Tab(text: '📄 Dokumente (${docs.length})'),
+                  Tab(text: '🧊 3D-STL (${stlFiles.length})'),
+                ],
+              ),
+              Expanded(
+                child: TabBarView(
+                  children: [
+                    photos.isEmpty
+                        ? const Center(
+                            child: Text('Noch keine Fotos in diesem Chat.'),
+                          )
+                        : GridView.builder(
+                            padding: const EdgeInsets.all(12),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 3,
+                                  crossAxisSpacing: 8,
+                                  mainAxisSpacing: 8,
+                                ),
+                            itemCount: photos.length,
+                            itemBuilder: (context, i) {
+                              final m = photos[i];
+                              final fullUrl = m.imageUrl!.startsWith('http')
+                                  ? m.imageUrl!
+                                  : 'https://rhz.internet-box.ch:8443/storage/${m.imageUrl}';
+                              return GestureDetector(
+                                onTap: () {
+                                  Navigator.pop(ctx);
+                                  _showFullScreenImage(fullUrl);
+                                },
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: CachedNetworkImage(
+                                    imageUrl: fullUrl,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                    docs.isEmpty
+                        ? const Center(
+                            child: Text('Noch keine Dokumente in diesem Chat.'),
+                          )
+                        : ListView.separated(
+                            padding: const EdgeInsets.all(12),
+                            itemCount: docs.length,
+                            separatorBuilder: (_, __) => const Divider(height: 1),
+                            itemBuilder: (context, i) {
+                              final m = docs[i];
+                              final fName =
+                                  m.fileName ?? m.fileUrl!.split('/').last;
+                              return ListTile(
+                                leading: const Icon(
+                                  Icons.description,
+                                  color: Color(0xFF00A884),
+                                ),
+                                title: Text(
+                                  fName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                subtitle: Text(
+                                  m.createdAt == null
+                                      ? ''
+                                      : DateFormat(
+                                          'dd.MM.yyyy HH:mm',
+                                        ).format(m.createdAt!.toLocal()),
+                                  style: const TextStyle(fontSize: 11),
+                                ),
+                                trailing: const Icon(Icons.open_in_new, size: 18),
+                                onTap: () {
+                                  Navigator.pop(ctx);
+                                  _openDocument(m.fileUrl!, m.fileName);
+                                },
+                              );
+                            },
+                          ),
+                    stlFiles.isEmpty
+                        ? const Center(
+                            child: Text(
+                              'Noch keine 3D-STL-Modelle in diesem Chat.',
+                            ),
+                          )
+                        : ListView.separated(
+                            padding: const EdgeInsets.all(12),
+                            itemCount: stlFiles.length,
+                            separatorBuilder: (_, __) => const Divider(height: 1),
+                            itemBuilder: (context, i) {
+                              final m = stlFiles[i];
+                              final fName =
+                                  m.fileName ?? m.fileUrl!.split('/').last;
+                              return ListTile(
+                                leading: const Icon(
+                                  Icons.view_in_ar,
+                                  color: Colors.cyan,
+                                ),
+                                title: Text(
+                                  fName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                subtitle: const Text(
+                                  'Tippen für interaktive 3D-Vorschau',
+                                  style: TextStyle(fontSize: 11),
+                                ),
+                                trailing: const Icon(
+                                  Icons.threed_rotation,
+                                  size: 18,
+                                  color: Colors.cyan,
+                                ),
+                                onTap: () {
+                                  Navigator.pop(ctx);
+                                  _openDocument(m.fileUrl!, m.fileName);
+                                },
+                              );
+                            },
+                          ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPollWidget(Message msg, int? currentUserId) {
+    final parsed = _parseQuotedContent(msg.content);
+    final rawLines = parsed.body
+        .trim()
+        .split('\n')
+        .map((l) => l.trim())
+        .where((l) => l.isNotEmpty)
+        .toList();
+    if (rawLines.isEmpty) return Text(msg.content);
+
+    final question = rawLines.first.replaceFirst('📊 [UMFRAGE]', '').trim();
+    final pollEmojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣'];
+    final options = <(String emoji, String label)>[];
+
+    for (var i = 1; i < rawLines.length && options.length < 5; i++) {
+      final line = rawLines[i];
+      final emo = pollEmojis[options.length];
+      final cleaned = line.startsWith(emo)
+          ? line.substring(emo.length).trim()
+          : line;
+      options.add((emo, cleaned));
+    }
+
+    int totalVotes = 0;
+    final counts = <String, int>{};
+    final myVotes = <String>{};
+    for (final (emo, _) in options) {
+      final c = msg.reactions.where((r) => r.emoji == emo).length;
+      counts[emo] = c;
+      totalVotes += c;
+      if (currentUserId != null &&
+          msg.reactions.any(
+            (r) => r.emoji == emo && r.userId == currentUserId,
+          )) {
+        myVotes.add(emo);
+      }
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(top: 4, bottom: 4),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFF00A884).withValues(alpha: 0.35),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '📊 INTERAKTIVE UMFRAGE · TIPPE ZUM ABSTIMMEN',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF008069),
+              letterSpacing: 0.4,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            question,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...options.map((opt) {
+            final emo = opt.$1;
+            final label = opt.$2;
+            final count = counts[emo] ?? 0;
+            final pct = totalVotes > 0 ? (count / totalVotes) : 0.0;
+            final voted = myVotes.contains(emo);
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () {
+                  ref
+                      .read(messagesProvider(widget.conversationId).notifier)
+                      .toggleReaction(msg.id, emo);
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 7,
+                  ),
+                  decoration: BoxDecoration(
+                    color: voted
+                        ? const Color(0xFF00A884).withValues(alpha: 0.14)
+                        : Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: voted
+                          ? const Color(0xFF00A884)
+                          : Colors.grey.shade300,
+                      width: voted ? 1.4 : 1.0,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(emo, style: const TextStyle(fontSize: 14)),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              label,
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: voted
+                                    ? FontWeight.bold
+                                    : FontWeight.w500,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            '${(pct * 100).round()}% ($count)',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF008069),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: pct,
+                          minHeight: 5,
+                          backgroundColor: Colors.grey.shade300,
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            Color(0xFF00A884),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }),
+          Text(
+            '$totalVotes ${totalVotes == 1 ? "Stimme" : "Stimmen"} insgesamt',
+            style: const TextStyle(fontSize: 10.5, color: Colors.black54),
           ),
         ],
       ),
@@ -1005,21 +1834,44 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       child: Scaffold(
         appBar: AppBar(
           titleSpacing: 0,
-          title: Row(
-            children: [
-              AppAvatar(
-                avatarUrl: (conversation != null && !conversation.isGroup)
-                    ? (otherUser?.fullAvatarUrl ?? currentUser?.fullAvatarUrl)
-                    : null,
-                name: (conversation?.isGroup ?? false)
-                    ? (chatTitle)
-                    : (otherUser?.name ?? currentUser?.name ?? chatTitle),
-                isGroup: conversation?.isGroup ?? false,
-                radius: 18,
+          title: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () => _showChatMediaGallerySheet(
+              messagesState.value ?? const <Message>[],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  AppAvatar(
+                    avatarUrl: (conversation != null && !conversation.isGroup)
+                        ? (otherUser?.fullAvatarUrl ??
+                              currentUser?.fullAvatarUrl)
+                        : null,
+                    name: (conversation?.isGroup ?? false)
+                        ? (chatTitle)
+                        : (otherUser?.name ?? currentUser?.name ?? chatTitle),
+                    isGroup: conversation?.isGroup ?? false,
+                    radius: 18,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(chatTitle, overflow: TextOverflow.ellipsis),
+                        const Text(
+                          'Tippen für Medien, Dokumente & 3D-STL',
+                          style: TextStyle(fontSize: 10, color: Colors.white70),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 10),
-              Expanded(child: Text(chatTitle, overflow: TextOverflow.ellipsis)),
-            ],
+            ),
           ),
           actions: [
             const Center(child: ConnectionIndicator()),
@@ -1076,6 +1928,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               onSelected: (value) {
                 if (value == 'search_chat') {
                   setState(() => _showInChatSearch = !_showInChatSearch);
+                } else if (value == 'media_gallery') {
+                  _showChatMediaGallerySheet(
+                    messagesState.value ?? const <Message>[],
+                  );
+                } else if (value == 'create_poll') {
+                  _showCreatePollDialog();
                 } else if (value == 'starred_filter') {
                   setState(() => _showStarredOnly = !_showStarredOnly);
                 } else if (value == 'assistant') {
@@ -1089,6 +1947,30 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 }
               },
               itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'media_gallery',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.perm_media,
+                        color: Color(0xFF00A884),
+                        size: 20,
+                      ),
+                      SizedBox(width: 10),
+                      Text('🗂️ Medien, Dokumente & 3D-Modelle'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'create_poll',
+                  child: Row(
+                    children: [
+                      Icon(Icons.poll, color: Colors.amber, size: 20),
+                      SizedBox(width: 10),
+                      Text('📊 Umfrage erstellen'),
+                    ],
+                  ),
+                ),
                 PopupMenuItem(
                   value: 'starred_filter',
                   child: Row(
@@ -1152,6 +2034,105 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
           child: Column(
             children: [
+              Builder(
+                builder: (context) {
+                  final pinnedMap = ref.watch(pinnedMessagesProvider);
+                  final pinnedId = pinnedMap[widget.conversationId];
+                  final allMsgs = messagesState.value;
+                  if (pinnedId == null || allMsgs == null) {
+                    return const SizedBox.shrink();
+                  }
+                  final pinnedMsg = allMsgs
+                      .where((m) => m.id == pinnedId)
+                      .firstOrNull;
+                  if (pinnedMsg == null) return const SizedBox.shrink();
+                  final previewText = pinnedMsg.content.trim().isNotEmpty
+                      ? _parseQuotedContent(
+                          pinnedMsg.content,
+                        ).body.replaceAll('\n', ' ')
+                      : (pinnedMsg.fileName ??
+                            (pinnedMsg.imageUrl != null
+                                ? '📷 Foto'
+                                : '🎵 Sprachnachricht'));
+                  return Container(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surface.withValues(alpha: 0.96),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 3.5,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: Colors.amber.shade700,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.push_pin,
+                          size: 17,
+                          color: Colors.amber.shade800,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              final idx = allMsgs.indexWhere(
+                                (m) => m.id == pinnedMsg.id,
+                              );
+                              if (idx != -1 && _scrollCtrl.hasClients) {
+                                final reverseIdx = allMsgs.length - 1 - idx;
+                                _scrollCtrl.animateTo(
+                                  (reverseIdx * 72.0).clamp(
+                                    0.0,
+                                    _scrollCtrl.position.maxScrollExtent,
+                                  ),
+                                  duration: const Duration(milliseconds: 320),
+                                  curve: Curves.easeOut,
+                                );
+                              }
+                            },
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '📌 Angepinnte Nachricht',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.amber.shade900,
+                                  ),
+                                ),
+                                Text(
+                                  previewText,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 17),
+                          tooltip: 'Nicht mehr anpinnen',
+                          onPressed: () {
+                            ref
+                                .read(pinnedMessagesProvider.notifier)
+                                .unpin(widget.conversationId);
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
               if (_showInChatSearch || _showStarredOnly)
                 Container(
                   color: Theme.of(context).colorScheme.surface,
@@ -1662,14 +2643,77 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                                     ),
                                                   ),
                                                 if (parsedQuote.body.isNotEmpty)
-                                                  Text(
-                                                    parsedQuote.body,
-                                                    style: TextStyle(
-                                                      fontSize: chatsSettings
-                                                          .chatFontSize,
-                                                      color: Colors.black87,
+                                                  if (parsedQuote.body
+                                                      .trimLeft()
+                                                      .startsWith(
+                                                        '📊 [UMFRAGE]',
+                                                      ))
+                                                    _buildPollWidget(
+                                                      msg,
+                                                      currentUser?.id,
+                                                    )
+                                                  else if (parsedQuote.body
+                                                      .trimLeft()
+                                                      .startsWith(
+                                                        '↪️ Weitergeleitet:',
+                                                      ))
+                                                    Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        const Text(
+                                                          '↪️ Weitergeleitet',
+                                                          style: TextStyle(
+                                                            fontSize: 11,
+                                                            fontStyle: FontStyle
+                                                                .italic,
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                            color: Color(
+                                                              0xFF008069,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        if (parsedQuote.body
+                                                            .trimLeft()
+                                                            .replaceFirst(
+                                                              '↪️ Weitergeleitet:',
+                                                              '',
+                                                            )
+                                                            .trim()
+                                                            .isNotEmpty) ...[
+                                                          const SizedBox(
+                                                            height: 2,
+                                                          ),
+                                                          Text(
+                                                            parsedQuote.body
+                                                                .trimLeft()
+                                                                .replaceFirst(
+                                                                  '↪️ Weitergeleitet:',
+                                                                  '',
+                                                                )
+                                                                .trim(),
+                                                            style: TextStyle(
+                                                              fontSize:
+                                                                  chatsSettings
+                                                                      .chatFontSize,
+                                                              color: Colors
+                                                                  .black87,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ],
+                                                    )
+                                                  else
+                                                    Text(
+                                                      parsedQuote.body,
+                                                      style: TextStyle(
+                                                        fontSize: chatsSettings
+                                                            .chatFontSize,
+                                                        color: Colors.black87,
+                                                      ),
                                                     ),
-                                                  ),
                                               ],
                                             ),
                                           ),

@@ -26,18 +26,34 @@ Willkommen bei **ChatConnect**, deinem sicheren und vielseitigen Messenger für 
 
 ---
 
-## 3. Interaktive Chat-Funktionen: Reaktionen, Antworten, Bearbeiten, Favoriten & Suche 💬
+## 3. Interaktive Chat-Funktionen: Reaktionen, Antworten, Weiterleiten, Anpinnen, Umfragen & Galerie 💬
 
-### 😊 Emoji-Reaktionen, ↩️ Antworten & ✏️ Bearbeiten
+### 😊 Emoji-Reaktionen, ↩️ Antworten, ↪️ Weiterleiten, 📌 Anpinnen & ✏️ Bearbeiten
 - **WebApp:** Fahre mit der Maus über eine Nachricht. Oben rechts erscheint eine Aktionsleiste:
   - **😊 Reagieren:** Wähle `👍`, `❤️`, `😂`, `😮`, `🎉` oder `🔥`. Die Reaktionen erscheinen in Echtzeit als anklickbare Badges direkt unter der Nachricht.
   - **↩️ Antworten:** Zitiert die ausgewählte Nachricht über dem Texteingabefeld und stellt das Zitat beim Senden als übersichtliche Zitat-Box dar.
+  - **↪️ Weiterleiten:** Leitet Textnachrichten, Fotos, Sprachmemos, Dokumente oder `.stl`-3D-Modelle mit 1 Klick an beliebige Kontakte, Gruppen oder an **„(Ich / Eigene Dateien)“** weiter.
+  - **📌 Oben im Chat anpinnen:** Heftet eine wichtige Nachricht (z. B. Treffpunkt, Adresse oder aktuelle `.stl`-Datei) als gelbes Banner direkt unter der Kopfzeile des Chats an – ein Klick auf das Banner springt sofort zur Nachricht.
   - **✏️ Bearbeiten:** Eigene Textnachrichten lassen sich jederzeit nachträglich korrigieren (mit Hinweis *„(bearbeitet)“*).
   - **★ Mit Stern markieren:** Speichert wichtige Nachrichten, 3D-Modelle oder Links in deiner Favoritenliste (**3-Punkte-Menü ➔ Mit Stern markiert**), inklusive Suchfunktion und direktem **„Springen“**-Button.
 - **Android-App:** Drücke **lange mit dem Finger** auf eine Nachricht:
   - Reagiere mit `👍`, `❤️`, `😂`, `😮`, `🎉` oder `🔥` (oder tippe direkt auf ein bestehendes Reaktions-Badge unter einer Nachricht).
-  - Wähle **„↩️ Antworten / Zitieren“**, **„✏️ Nachricht bearbeiten“** oder **„⭐ Mit Stern markieren“**.
-- **Live-Synchronisation (ohne Neuladen):** Blaue Gelesen-Doppelhäkchen (`✓✓`), Emoji-Reaktionen, bearbeitete Texte und gelöschte Nachrichten aktualisieren sich sowohl im Browser als auch in der Android-App automatisch in Echtzeit.
+  - Wähle **„↩️ Antworten / Zitieren“**, **„↪️ Nachricht / Datei weiterleiten“**, **„📌 Oben im Chat anpinnen“**, **„✏️ Nachricht bearbeiten“** oder **„⭐ Mit Stern markieren“**.
+- **Live-Synchronisation (ohne Neuladen):** Blaue Gelesen-Doppelhäkchen (`✓✓`), Emoji-Reaktionen, Umfrage-Stimmen, bearbeitete Texte und gelöschte Nachrichten aktualisieren sich sowohl im Browser als auch in der Android-App automatisch in Echtzeit.
+
+### 📊 Interaktive Live-Umfragen (Polls) im Chat & in Gruppen
+- **Umfrage starten:**
+  - **In der WebApp:** Klicke unten in der Eingabeleiste auf das **📊 Umfrage-Symbol**.
+  - **In der Android-App:** Tippe unten links auf das **📎 Anhang-Symbol ➔ „📊 Interaktive Umfrage erstellen“** (oder oben rechts im `⋮`-Menü ➔ **„📊 Umfrage erstellen“**).
+- Nutze praktische **Schnell-Vorlagen** (*📅 Termin*, *🍕 Essen*, *🧊 3D-Farbe*) oder gib eine eigene Frage mit **2 bis 5 Antwort-Optionen** (`1️⃣` bis `5️⃣`) ein.
+- **Echtzeit-Abstimmung:** Ein Tipp oder Klick auf eine Option gibt deine Stimme ab – Prozentbalken und Stimmenanzahl aktualisieren sich live zwischen WebApp und Android-App!
+
+### 🗂️ Medien-, Dokumenten- & 3D-STL-Galerie pro Chat
+- **Öffnen:** Tippe oder klicke oben im geöffneten Chat einfach auf den **Chat-Namen / die Kopfzeile** (oder wähle im `⋮`-Menü **„🗂️ Medien, Dokumente & 3D-Modelle“** bzw. in der WebApp den Button **„🗂️ Medien & 3D“**).
+- Übersichtliche **3-Tab-Ansicht** aller im Chat geteilten Inhalte:
+  1. **📷 Fotos:** Raster-Galerie aller Bilder mit 1-Tap-Vollbildansicht.
+  2. **📄 Dokumente:** Alle PDFs, ZIP-/JAR-Archive und Markdown-Dateien (`.md`).
+  3. **🧊 3D-STL:** Alle 3D-Druck-Modelle (`.stl` / `.ctl`) mit Direktstart im interaktiven 3D-Viewer!
 
 ### 🔍 Volltextsuche im geöffneten Chat, Schnellfilter & Archiv
 - **Suche im Chat:** Tippe oben rechts im geöffneten Chat auf die **Lupe (🔍)** (oder drücke am PC `Strg + F`), um den Chatverlauf nach Texten oder Dateinamen (`.stl`, `.jar`, `.zip`, `.md`) zu durchsuchen.

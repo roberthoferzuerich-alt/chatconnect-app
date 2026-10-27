@@ -110,6 +110,66 @@ final starredMessageIdsProvider =
       (ref) => StarredMessageIdsNotifier(),
     );
 
+class PinnedMessagesNotifier extends StateNotifier<Map<int, int>> {
+  static const _prefsKey = 'cc_pinned_msg_map_v1';
+
+  PinnedMessagesNotifier() : super(const <int, int>{}) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_prefsKey);
+      if (raw != null && raw.isNotEmpty) {
+        final decoded = jsonDecode(raw) as Map<String, dynamic>;
+        final next = <int, int>{};
+        decoded.forEach((k, v) {
+          final cId = int.tryParse(k);
+          final mId = v is int ? v : int.tryParse(v.toString());
+          if (cId != null && mId != null) {
+            next[cId] = mId;
+          }
+        });
+        state = next;
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _save(Map<int, int> map) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final encoded = map.map((k, v) => MapEntry(k.toString(), v));
+      await prefs.setString(_prefsKey, jsonEncode(encoded));
+    } catch (_) {}
+  }
+
+  Future<bool> togglePin(int conversationId, int messageId) async {
+    final next = Map<int, int>.from(state);
+    final isNowPinned = next[conversationId] != messageId;
+    if (isNowPinned) {
+      next[conversationId] = messageId;
+    } else {
+      next.remove(conversationId);
+    }
+    state = next;
+    await _save(next);
+    return isNowPinned;
+  }
+
+  Future<void> unpin(int conversationId) async {
+    final next = Map<int, int>.from(state);
+    next.remove(conversationId);
+    state = next;
+    await _save(next);
+  }
+}
+
+final pinnedMessagesProvider =
+    StateNotifierProvider<PinnedMessagesNotifier, Map<int, int>>(
+      (ref) => PinnedMessagesNotifier(),
+    );
+
 final callsProvider = FutureProvider<List<CallRecord>>((ref) async {
   final repo = ref.read(chatRepositoryProvider);
   return repo.getCalls();
