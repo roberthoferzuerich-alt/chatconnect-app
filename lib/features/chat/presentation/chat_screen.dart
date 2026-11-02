@@ -1454,16 +1454,36 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   String _localQuickSpellCheck(String input) {
-    var res = input;
-    final map = {
+    var res = input.trim();
+    if (res.isEmpty) return '';
+
+    // 1. Reduziere 3+ gleiche Buchstaben (z.B. Halllo -> Hallo)
+    res = res.replaceAllMapped(
+      RegExp(r'([a-zA-ZäöüÄÖÜ])\1{2,}', caseSensitive: false),
+      (m) => '${m[1]}${m[1]}',
+    );
+
+    // Falsche Doppel-k im Deutschen korrigieren (z.B. Druckken -> drucken)
+    res = res.replaceAll(RegExp(r'(?<!c)kk', caseSensitive: false), 'ck');
+    res = res.replaceAll(RegExp(r'druckck', caseSensitive: false), 'druck');
+
+    // Wörterbuch & Namen
+    final map = <Pattern, String>{
+      RegExp(r'\bhall+o+\b', caseSensitive: false): 'Hallo',
+      RegExp(r'\bhi+\b', caseSensitive: false): 'Hi',
+      RegExp(r'\bhe+y+\b', caseSensitive: false): 'Hey',
       RegExp(r'\bmaincraft\b', caseSensitive: false): 'Minecraft',
       RegExp(r'\bmeincraft\b', caseSensitive: false): 'Minecraft',
       RegExp(r'\bmincraft\b', caseSensitive: false): 'Minecraft',
+      RegExp(r'\broblo+x+\b', caseSensitive: false): 'Roblox',
       RegExp(r'\brobloks\b', caseSensitive: false): 'Roblox',
-      RegExp(r'\brobloxx\b', caseSensitive: false): 'Roblox',
       RegExp(r'\bopa\b', caseSensitive: false): 'Opa',
       RegExp(r'\boma\b', caseSensitive: false): 'Oma',
-      RegExp(r'\bhallo\b', caseSensitive: false): 'Hallo',
+      RegExp(r'\brobert\b', caseSensitive: false): 'Robert',
+      RegExp(r'\bleon\b', caseSensitive: false): 'Leon',
+      RegExp(r'\bdario\b', caseSensitive: false): 'Dario',
+      RegExp(r'\bjil\b', caseSensitive: false): 'Jil',
+      RegExp(r'\bzoe\b', caseSensitive: false): 'Zoe',
       RegExp(r'\bdanke\b', caseSensitive: false): 'Danke',
       RegExp(r'\bbitte\b', caseSensitive: false): 'Bitte',
       RegExp(r'\bzäichnen\b', caseSensitive: false): 'zeichnen',
@@ -1472,13 +1492,35 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       RegExp(r'\bspil\b', caseSensitive: false): 'Spiel',
       RegExp(r'\bspilen\b', caseSensitive: false): 'spielen',
       RegExp(r'\bzoken\b', caseSensitive: false): 'zocken',
+      RegExp(r'\b3d[\s\-]*druck\w*\b', caseSensitive: false): '3D-drucken',
     };
     for (final entry in map.entries) {
       res = res.replaceAll(entry.key, entry.value);
     }
+
+    // Komma nach Begrüßung (z.B. Hallo Opa kannst -> Hallo Opa, kannst)
+    res = res.replaceAllMapped(
+      RegExp(r'^(Hallo|Hi|Hey)\s+(Opa|Oma|Robert|Leon|Dario|Jil|Zoe)\s+([a-zäöü])', caseSensitive: false),
+      (m) => '${m[1]} ${m[2]}, ${m[3]}',
+    );
+
+    // Satzanfang groß
     if (res.isNotEmpty) {
       res = res[0].toUpperCase() + res.substring(1);
     }
+
+    // Satzzeichen am Ende
+    final isQuestion = RegExp(
+      r'\b(kannst|können|hast|haben|bist|seid|willst|wollen|wie|was|wo|wann|warum|weshalb|darf|dürfen)\b',
+      caseSensitive: false,
+    ).hasMatch(res);
+
+    if (isQuestion && !res.endsWith('?') && !res.endsWith('!') && !res.endsWith('.')) {
+      res += '?';
+    } else if (!isQuestion && !res.endsWith('.') && !res.endsWith('!') && !res.endsWith('?')) {
+      res += '.';
+    }
+
     return res;
   }
 
