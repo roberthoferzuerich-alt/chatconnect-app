@@ -1378,6 +1378,110 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 
+  Future<void> _triggerSpellCheck() async {
+    final input = _msgCtrl.text.trim();
+    if (input.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✨ Tippe erst einen Satz ein, dann hilft dir der Zauberstab!'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    try {
+      final dio = import_dio.Dio();
+      final response = await dio.post(
+        'https://rhz.internet-box.ch:8443/api/v1/chats/fix-spelling',
+        data: {'text': input},
+        options: import_dio.Options(
+          headers: {'Accept': 'application/json'},
+          validateStatus: (_) => true,
+        ),
+      );
+
+      String? corrected;
+      if (response.statusCode == 200 && response.data != null && response.data is Map) {
+        corrected = response.data['corrected']?.toString();
+      }
+
+      corrected ??= _localQuickSpellCheck(input);
+
+      if (!mounted) return;
+
+      if (corrected.trim().toLowerCase() == input.toLowerCase()) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✨ Perfekt! Dein Text ist schon fehlerfrei! 👍'),
+            backgroundColor: Color(0xFF00A884),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      } else {
+        setState(() {
+          _msgCtrl.text = corrected!;
+          _msgCtrl.selection = TextSelection.fromPosition(
+            TextPosition(offset: _msgCtrl.text.length),
+          );
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✨ Zauberstab: Text sauber korrigiert!'),
+            backgroundColor: Color(0xFF00A884),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (_) {
+      final fallback = _localQuickSpellCheck(input);
+      if (mounted) {
+        setState(() {
+          _msgCtrl.text = fallback;
+          _msgCtrl.selection = TextSelection.fromPosition(
+            TextPosition(offset: _msgCtrl.text.length),
+          );
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✨ Zauberstab: Satzanfang & Wörter korrigiert!'),
+            backgroundColor: Color(0xFF00A884),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
+  String _localQuickSpellCheck(String input) {
+    var res = input;
+    final map = {
+      RegExp(r'\bmaincraft\b', caseSensitive: false): 'Minecraft',
+      RegExp(r'\bmeincraft\b', caseSensitive: false): 'Minecraft',
+      RegExp(r'\bmincraft\b', caseSensitive: false): 'Minecraft',
+      RegExp(r'\brobloks\b', caseSensitive: false): 'Roblox',
+      RegExp(r'\brobloxx\b', caseSensitive: false): 'Roblox',
+      RegExp(r'\bopa\b', caseSensitive: false): 'Opa',
+      RegExp(r'\boma\b', caseSensitive: false): 'Oma',
+      RegExp(r'\bhallo\b', caseSensitive: false): 'Hallo',
+      RegExp(r'\bdanke\b', caseSensitive: false): 'Danke',
+      RegExp(r'\bbitte\b', caseSensitive: false): 'Bitte',
+      RegExp(r'\bzäichnen\b', caseSensitive: false): 'zeichnen',
+      RegExp(r'\bzeihnen\b', caseSensitive: false): 'zeichnen',
+      RegExp(r'\bkuglbahn\b', caseSensitive: false): 'Kugelbahn',
+      RegExp(r'\bspil\b', caseSensitive: false): 'Spiel',
+      RegExp(r'\bspilen\b', caseSensitive: false): 'spielen',
+      RegExp(r'\bzoken\b', caseSensitive: false): 'zocken',
+    };
+    for (final entry in map.entries) {
+      res = res.replaceAll(entry.key, entry.value);
+    }
+    if (res.isNotEmpty) {
+      res = res[0].toUpperCase() + res.substring(1);
+    }
+    return res;
+  }
+
   Widget _buildMarkdownMessage(String body, double fontSize, bool isMe) {
     final hasMarkdown = body.contains('```') ||
         body.contains('`') ||
@@ -3105,6 +3209,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                 controller: _msgCtrl,
                                 focusNode: _focusNode,
                                 keyboardType: TextInputType.multiline,
+                                textCapitalization: TextCapitalization.sentences,
+                                autocorrect: true,
+                                enableSuggestions: true,
+                                spellCheckConfiguration: const SpellCheckConfiguration(),
                                 minLines: 1,
                                 maxLines: 5,
                                 textInputAction: chatsSettings.sendWithEnter
@@ -3118,6 +3226,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                   contentPadding: const EdgeInsets.symmetric(
                                     horizontal: 16,
                                     vertical: 10,
+                                  ),
+                                  suffixIcon: IconButton(
+                                    icon: const Text('✨', style: TextStyle(fontSize: 16)),
+                                    tooltip: '✨ Rechtschreibung prüfen & korrigieren',
+                                    onPressed: _triggerSpellCheck,
                                   ),
                                 ),
                                 onSubmitted: chatsSettings.sendWithEnter
