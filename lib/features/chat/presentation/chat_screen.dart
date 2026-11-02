@@ -1531,7 +1531,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         body.contains('*') ||
         body.contains('#') ||
         body.contains('- ') ||
-        body.contains('1. ');
+        body.contains('1. ') ||
+        body.contains('![') ||
+        body.contains('<img');
 
     if (!hasMarkdown) {
       return Text(
@@ -1547,6 +1549,63 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       data: body,
       selectable: true,
       shrinkWrap: true,
+      imageBuilder: (uri, title, alt) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6.0),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.network(
+              uri.toString(),
+              fit: BoxFit.contain,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  height: 220,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.04),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 28,
+                        height: 28,
+                        child: CircularProgressIndicator(strokeWidth: 2.5),
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        '🎨 Bild wird geladen...',
+                        style: TextStyle(fontSize: 13, color: Colors.black54),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              errorBuilder: (context, error, stackTrace) => Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.broken_image, color: Colors.red),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Bild konnte nicht geladen werden ($alt)',
+                        style: TextStyle(color: Colors.red.shade700, fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
       styleSheet: MarkdownStyleSheet(
         p: TextStyle(
           fontSize: fontSize,
