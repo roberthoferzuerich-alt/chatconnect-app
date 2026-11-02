@@ -1378,6 +1378,68 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 
+  Widget _buildMarkdownMessage(String body, double fontSize, bool isMe) {
+    final hasMarkdown = body.contains('```') ||
+        body.contains('`') ||
+        body.contains('**') ||
+        body.contains('*') ||
+        body.contains('#') ||
+        body.contains('- ') ||
+        body.contains('1. ');
+
+    if (!hasMarkdown) {
+      return Text(
+        body,
+        style: TextStyle(
+          fontSize: fontSize,
+          color: Colors.black87,
+        ),
+      );
+    }
+
+    return MarkdownBody(
+      data: body,
+      selectable: true,
+      shrinkWrap: true,
+      styleSheet: MarkdownStyleSheet(
+        p: TextStyle(
+          fontSize: fontSize,
+          color: Colors.black87,
+          height: 1.35,
+        ),
+        code: TextStyle(
+          fontSize: fontSize * 0.9,
+          fontFamily: 'monospace',
+          backgroundColor: const Color(0x15000000),
+          color: const Color(0xFF0F766E),
+        ),
+        codeblockPadding: const EdgeInsets.all(10),
+        codeblockDecoration: BoxDecoration(
+          color: const Color(0xFF1E293B),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        listBullet: TextStyle(fontSize: fontSize, color: Colors.black87),
+        strong: const TextStyle(fontWeight: FontWeight.bold),
+        em: const TextStyle(fontStyle: FontStyle.italic),
+        h1: TextStyle(
+          fontSize: fontSize * 1.25,
+          fontWeight: FontWeight.bold,
+          color: Colors.black87,
+        ),
+        h2: TextStyle(
+          fontSize: fontSize * 1.15,
+          fontWeight: FontWeight.bold,
+          color: Colors.black87,
+        ),
+        h3: TextStyle(
+          fontSize: fontSize * 1.05,
+          fontWeight: FontWeight.bold,
+          color: Colors.black87,
+        ),
+      ),
+    );
+  }
+
   Widget _buildPollWidget(Message msg, int? currentUserId) {
     final parsed = _parseQuotedContent(msg.content);
     final rawLines = parsed.body
@@ -2708,13 +2770,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                                       ],
                                                     )
                                                   else
-                                                    Text(
+                                                    _buildMarkdownMessage(
                                                       parsedQuote.body,
-                                                      style: TextStyle(
-                                                        fontSize: chatsSettings
-                                                            .chatFontSize,
-                                                        color: Colors.black87,
-                                                      ),
+                                                      chatsSettings.chatFontSize,
+                                                      isMe,
                                                     ),
                                               ],
                                             ),
