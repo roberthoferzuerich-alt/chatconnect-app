@@ -23,7 +23,9 @@ void main() async {
   HttpOverrides.global = MyHttpOverrides();
 
   try {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
   } catch (e) {
     debugPrint('Firebase init error: $e');
   }

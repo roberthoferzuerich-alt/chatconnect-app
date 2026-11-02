@@ -2238,10 +2238,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             child: Container(
                               constraints: BoxConstraints(
                                 maxWidth:
-                                    MediaQuery.of(context).size.width * 0.75 >
-                                        400
-                                    ? 400
-                                    : MediaQuery.of(context).size.width * 0.75,
+                                    MediaQuery.of(context).size.width * 0.82 >
+                                        420
+                                    ? 420
+                                    : MediaQuery.of(context).size.width * 0.82,
                               ),
                               margin: const EdgeInsets.symmetric(
                                 vertical: 4,
@@ -2336,8 +2336,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                               10,
                                             ),
                                             child: Container(
-                                              constraints: const BoxConstraints(
-                                                maxWidth: 260,
+                                              constraints: BoxConstraints(
+                                                maxWidth: MediaQuery.of(context).size.width * 0.7 > 260
+                                                    ? 260
+                                                    : MediaQuery.of(context).size.width * 0.7,
                                               ),
                                               padding:
                                                   const EdgeInsets.symmetric(
