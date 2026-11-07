@@ -400,8 +400,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       await import_dio.Dio().download(fullUrl, savePath);
 
       if (isMarkdown) {
-        final mdContent = await File(savePath).readAsString();
+        final rawMdContent = await File(savePath).readAsString();
+        final mdContent = rawMdContent.replaceAll(RegExp(r'<a\s+id="[^"]*"\s*>\s*</a>\r?\n?'), '');
         if (!mounted) return;
+        final mdScrollController = ScrollController();
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -409,6 +411,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               appBar: AppBar(
                 title: Text(displayFileName),
                 actions: [
+                  IconButton(
+                    icon: const Icon(Icons.vertical_align_top),
+                    tooltip: 'Nach oben scrollen',
+                    onPressed: () {
+                      if (mdScrollController.hasClients) {
+                        mdScrollController.animateTo(
+                          0,
+                          duration: const Duration(milliseconds: 350),
+                          curve: Curves.easeOutCubic,
+                        );
+                      }
+                    },
+                  ),
                   IconButton(
                     icon: const Icon(Icons.share),
                     tooltip: 'Datei teilen / speichern',
@@ -421,9 +436,57 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 ],
               ),
               body: Markdown(
+                controller: mdScrollController,
                 data: mdContent,
                 selectable: true,
                 padding: const EdgeInsets.all(16),
+                onTapLink: (text, href, title) {
+                  if (href == null || href.isEmpty) return;
+                  if (href.startsWith('#')) {
+                    final rawSlug = Uri.decodeComponent(href.substring(1)).toLowerCase();
+                    final normSlug = rawSlug.replaceAll(RegExp(r'-+'), '-').replaceAll(RegExp(r'^-|-$'), '');
+                    final leadNum = RegExp(r'^(\d+)').firstMatch(normSlug)?.group(1);
+
+                    final lines = mdContent.split('\n');
+                    int targetCharOffset = -1;
+                    int runningChars = 0;
+                    for (final line in lines) {
+                      if (line.startsWith('#')) {
+                        final headingText = line.replaceFirst(RegExp(r'^#+\s*'), '').trim().toLowerCase();
+                        final hSlug = headingText
+                            .replaceAll(RegExp(r'\s+'), '-')
+                            .replaceAll(RegExp(r'[^a-z0-9äöüß\-]'), '')
+                            .replaceAll(RegExp(r'-+'), '-')
+                            .replaceAll(RegExp(r'^-|-$'), '');
+                        final hNum = RegExp(r'^(\d+(?:\.\d+)?)').firstMatch(headingText)?.group(1)?.replaceAll('.', '');
+                        if (hSlug == normSlug ||
+                            (normSlug.isNotEmpty && hSlug.startsWith(normSlug)) ||
+                            (leadNum != null && hNum == leadNum)) {
+                          targetCharOffset = runningChars;
+                          break;
+                        }
+                      }
+                      runningChars += line.length + 1;
+                    }
+                    if (targetCharOffset >= 0 && mdScrollController.hasClients) {
+                      final maxScroll = mdScrollController.position.maxScrollExtent;
+                      final ratio = (targetCharOffset / mdContent.length).clamp(0.0, 1.0);
+                      mdScrollController.animateTo(
+                        maxScroll * ratio,
+                        duration: const Duration(milliseconds: 400),
+                        curve: Curves.easeOutCubic,
+                      );
+                    }
+                    return;
+                  }
+                  Clipboard.setData(ClipboardData(text: href));
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    SnackBar(
+                      content: Text('Link kopiert: $href'),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                },
               ),
             ),
           ),

@@ -3,6 +3,17 @@ const String appUserGuideMarkdown = '''
 
 Willkommen bei **ChatConnect**, deinem sicheren und vielseitigen Messenger für Familie und Freunde! Diese Anleitung erklärt dir Schritt für Schritt alle Funktionen auf dem **Smartphone/Tablet (Android-App)** sowie auf dem **Laptop/PC (WebApp)**.
 
+## 📑 Inhaltsverzeichnis
+1. [Erste Schritte, Profil & Eigener Datei-Chat](#1-erste-schritte-profil--eigener-datei-chat)
+2. [Nachrichten, Emojis & Dokumente (bis 500 MB)](#2-nachrichten-emojis--dokumente-bis-500-mb)
+3. [Interaktive Chat-Funktionen: Reaktionen, Antworten, Weiterleiten, Anpinnen, Umfragen & Galerie](#3-interaktive-chat-funktionen-reaktionen-antworten-weiterleiten-anpinnen-umfragen--galerie)
+4. [Integrierter Markdown-Viewer (`.md`) & 3D-STLViewer Pro Edition](#4-integrierter-markdown-viewer-md--3d-stlviewer-pro-edition)
+5. [KI-Bildgenerator, Cropper & Web-Größen-Studio](#5-ki-bildgenerator-cropper--web-größen-studio)
+6. [Edle Bild-Lightbox & ZIP / Minecraft-`.jar` Inhalts-Inspektor](#6-edle-bild-lightbox--zip--minecraft-jar-inhalts-inspektor)
+7. [Sprachnachrichten aufnehmen & senden](#7-sprachnachrichten-aufnehmen--senden)
+8. [Sprach- & Videoanrufe (inkl. Rückruf-Nachricht im Chat)](#8-sprach--videoanrufe)
+9. [App-Sperre (PIN-Schutz), Hintergrundbilder & Schriftgröße](#9-app-sperre-pin-schutz-hintergrundbilder--schriftgröße)
+
 ---
 
 ## 1. Erste Schritte, Profil & Eigener Datei-Chat
