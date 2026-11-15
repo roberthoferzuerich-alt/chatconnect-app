@@ -2193,11 +2193,39 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(chatTitle, overflow: TextOverflow.ellipsis),
-                        const Text(
-                          'Tippen für Medien, Dokumente & 3D-STL',
-                          style: TextStyle(fontSize: 10, color: Colors.white70),
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        if (otherUser != null)
+                          Row(
+                            children: [
+                              Container(
+                                width: 7,
+                                height: 7,
+                                margin: const EdgeInsets.only(right: 4),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: otherUser.isOnline ? Colors.greenAccent : Colors.white38,
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  otherUser.isOnline
+                                      ? (otherUser.about != null && otherUser.about!.isNotEmpty && !['ChatConnect', 'ChatConnect Nutzer', 'Hallo, ich nutze ChatConnect.', '🟢 Verfügbar'].contains(otherUser.about)
+                                          ? 'online · ${otherUser.about}'
+                                          : 'online')
+                                      : (otherUser.about != null && otherUser.about!.isNotEmpty && !['ChatConnect', 'ChatConnect Nutzer', 'Hallo, ich nutze ChatConnect.', '🟢 Verfügbar'].contains(otherUser.about)
+                                          ? 'offline · ${otherUser.about}'
+                                          : 'offline'),
+                                  style: const TextStyle(fontSize: 10, color: Colors.white70),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          )
+                        else
+                          const Text(
+                            'Tippen für Medien, Dokumente & 3D-STL',
+                            style: TextStyle(fontSize: 10, color: Colors.white70),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                       ],
                     ),
                   ),
