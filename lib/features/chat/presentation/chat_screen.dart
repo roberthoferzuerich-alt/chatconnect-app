@@ -273,19 +273,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.camera_alt, color: Colors.teal),
-              title: const Text('Kamera'),
-              onTap: () {
-                Navigator.pop(context);
-                _pickImage(ImageSource.camera);
-              },
-            ),
-            ListTile(
               leading: const Icon(Icons.photo_library, color: Colors.teal),
-              title: const Text('Galerie (Foto)'),
+              title: const Text('Bilder suchen & auswählen (Galerie)'),
+              subtitle: const Text('Fotos & Bilder vom Gerät senden'),
               onTap: () {
                 Navigator.pop(context);
                 _pickImage(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: Colors.teal),
+              title: const Text('Kamera (Foto aufnehmen)'),
+              subtitle: const Text('Direkt ein neues Foto schießen'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.camera);
               },
             ),
             ListTile(
@@ -293,9 +295,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 Icons.picture_as_pdf_outlined,
                 color: Colors.redAccent,
               ),
-              title: const Text('Dokument / PDF / Markdown / 3D-STL'),
+              title: const Text('Files & Dokumente suchen'),
               subtitle: const Text(
-                'PDF, Markdown (.md), 3D-Modell (.stl/.ctl), Office, ZIP',
+                'PDF, Word, ZIP, Markdown (.md), Minecraft (.jar), 3D (.stl/.ctl)',
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -3340,34 +3342,62 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         padding: const EdgeInsets.all(8.0),
                         child: Row(
                           children: [
-                            if (!chatsSettings.useSystemEmojis)
-                              IconButton(
-                                icon: Icon(
-                                  _emojiShowing
-                                      ? Icons.keyboard
-                                      : Icons.emoji_emotions_outlined,
-                                  color: Colors.teal,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _emojiShowing = !_emojiShowing;
-                                    if (_emojiShowing) {
-                                      _focusNode.unfocus();
-                                    } else {
-                                      _focusNode.requestFocus();
-                                    }
-                                  });
-                                },
+                            IconButton(
+                              icon: Icon(
+                                _emojiShowing
+                                    ? Icons.keyboard
+                                    : Icons.emoji_emotions_outlined,
+                                color: Colors.teal,
                               ),
+                              tooltip: _emojiShowing ? 'Tastatur' : 'Emojis',
+                              onPressed: () {
+                                setState(() {
+                                  _emojiShowing = !_emojiShowing;
+                                  if (_emojiShowing) {
+                                    _focusNode.unfocus();
+                                  } else {
+                                    _focusNode.requestFocus();
+                                  }
+                                });
+                              },
+                            ),
                             IconButton(
                               icon: const Icon(
                                 Icons.attach_file,
                                 color: Colors.teal,
                               ),
+                              tooltip: 'Anhang & Medien auswählen',
                               onPressed: _isUploading
                                   ? null
                                   : _showImageSourceDialog,
                             ),
+                            if (MediaQuery.of(context).size.width >= 600) ...[
+                              IconButton(
+                                icon: const Icon(Icons.photo_library_outlined, color: Colors.teal),
+                                tooltip: 'Bilder suchen & senden',
+                                onPressed: _isUploading ? null : () => _pickImage(ImageSource.gallery),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.description_outlined, color: Colors.indigo),
+                                tooltip: 'Files & Dokumente suchen',
+                                onPressed: _isUploading ? null : _pickDocument,
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.auto_awesome, color: Color(0xFF00A884)),
+                                tooltip: '✨ KI-Bildgenerator',
+                                onPressed: () => context.push('/assistant', extra: widget.conversationId),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.view_in_ar, color: Colors.lightBlue),
+                                tooltip: '🧊 3D-Modell-Generator',
+                                onPressed: _showStlGeneratorDialog,
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.poll_outlined, color: Colors.amber.shade800),
+                                tooltip: '📊 Umfrage erstellen',
+                                onPressed: _showCreatePollDialog,
+                              ),
+                            ],
                             Expanded(
                               child: TextField(
                                 controller: _msgCtrl,
@@ -3444,7 +3474,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   ),
                 ),
               ),
-              if (_emojiShowing && !chatsSettings.useSystemEmojis)
+              if (_emojiShowing)
                 SizedBox(
                   height: 250,
                   child: EmojiPicker(
