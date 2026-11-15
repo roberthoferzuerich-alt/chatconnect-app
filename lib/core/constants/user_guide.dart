@@ -115,11 +115,13 @@ Willkommen bei **ChatConnect**, deinem sicheren und vielseitigen Messenger für 
 
 ---
 
-## 8. Sprach- & Videoanrufe 📞 📹
-
+## 8. Sprach- & Videoanrufe 📞 📹 & Live-Status 🟢
+ 
 - Öffne einen Chat und tippe oben rechts auf den **Telefonhörer (📞)** für einen Sprachanruf oder die **Videokamera (📹)** für einen Videoanruf.
 - Dank Push-Benachrichtigung klingelt das Smartphone des Partners auch im Standby zuverlässig.
-
+- **✨ Intelligente Anruf-Zusammenfassung (Anti-Spam):** Wiederholte verpasste Anrufe desselben Kontakts werden übersichtlich in einer einzigen Chatblase zusammengefasst (z. B. `(3x)`), statt den Chat vollzumüllen.
+- **🟢 Live Online/Offline-Status & Anruf-Schutz:** In der Titelleiste siehst du live, ob dein Chatpartner online (`🟢`) oder offline (`⚪`) ist. Bei Abwesenheit oder Ruhemodus warnt dich die App vor dem Wählen, damit du stattdessen bequem schreiben kannst.
+ 
 ---
 
 ## 9. App-Sperre (PIN-Schutz), Hintergrundbilder & Schriftgröße 🔒🎨
